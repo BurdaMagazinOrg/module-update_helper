@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Update helper checklist hooks.
+ */
+
+use Drupal\Core\Url;
+use Symfony\Component\Yaml\Yaml;
+use Drupal\update_helper_checklist\Entity\Update;
+
+/**
+ * Implements hook_checklistapi_checklist_info().
+ */
+function update_helper_checklist_checklistapi_checklist_info() {
+
+  $definitions = [];
+  $definitions['update_helper_checklist'] = [
+    '#title' => t('Update helper instructions'),
+    '#path' => '/admin/config/development/update-helper',
+    '#description' => t('Provides steps to keep your site up to date.'),
+    '#callback' => '_update_helper_checklist_checklistapi_checklist_items',
+  ];
+
+  return $definitions;
+}
+
+/**
+ * Implements a callback update_helper_checklist_checklistapi_checklist_info().
+ *
+ * @return array
+ *   Return the items for the update_helper_checklist list.
+ */
+function _update_helper_checklist_checklistapi_checklist_items() {
+  $updates_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'updates.yml';
+
+  $tasks = [];
+  if (is_file($updates_file)) {
+    Yaml::parse(file_get_contents($updates_file));
+  }
+
+  foreach ($tasks as $version => $updates) {
+    foreach ($updates as $key => $update) {
+      if (is_array($update)) {
+        $entry = Update::load($key);
+        $status = ($entry && $entry->wasSuccessfulByHook()) ? TRUE : FALSE;
+        if ($status && !empty($update['#description_successful'])) {
+          $tasks[$version][$key]['#description'] .= $update['#description_successful'];
+        }
+        elseif (!$status && !empty($update['#description_failed'])) {
+          $tasks[$version][$key]['#description'] .= $update['#description_failed'];
+        }
+      }
+    }
+  }
+
+  array_walk_recursive($tasks, function (&$value, $key) {
+    if ($key == '#url') {
+      $value = Url::fromUri($value);
+      if ($value->isExternal()) {
+        $value->setOption('attributes', ['target' => '_blank']);
+      }
+    }
+    elseif (in_array($key, ['#title', '#weight'])) {
+      // @codingStandardsIgnoreStart
+      $value = t($value);
+      // @codingStandardsIgnoreEnd
+    }
+  });
+
+  return array_reverse($tasks);
+}
+
+/**
+ * Implements hook_toolbar().
+ */
+function update_helper_checklist_toolbar() {
+  if (!\Drupal::service('update_helper_checklist.update_checklist')->isAvailable()) {
+    return [];
+  }
+
+  $user = \Drupal::currentUser();
+
+  /** @var Drupal\checklistapi\ChecklistapiChecklist $checklist */
+  $checklist = checklistapi_checklist_load('update_helper_checklist');
+
+  $items = [];
+  // We are varying our cache by path and by permission.
+  $items['update_helper_checklist'] = [
+    '#cache' => [
+      'keys' => ['toolbar'],
+      'contexts' => ['user.permissions'],
+    ],
+  ];
+
+  \Drupal::service('renderer')->addCacheableDependency($items['update_helper_checklist'], $checklist->config);
+
+  if ($checklist->getPercentComplete() != 100 && $user->hasPermission('view update_helper_checklist checklistapi checklist')) {
+    $items['update_helper_checklist'] += [
+      '#type' => 'toolbar_item',
+      'tab' => [
+        '#type' => 'link',
+        '#title' => t('Pending updates'),
+        '#url' => Url::fromRoute($checklist->getRouteName()),
+        '#attributes' => [
+          'class' => ['toolbar-icon', 'update-helper__toolbar-icon'],
+          'aria-pressed' => 'false',
+        ],
+      ],
+      '#weight' => 500,
+      '#attached' => [
+        'library' => [
+          'update_helper_checklist/toolbar-button',
+        ],
+      ],
+    ];
+  }
+  return $items;
+}

@@ -1,0 +1,102 @@
+<?php
+
+namespace Drupal\update_helper\Events;
+
+use Drupal\Console\Core\Command\Command;
+use Symfony\Component\EventDispatcher\Event;
+
+/**
+ * Class ConfigurationUpdateGeneratedEvent.
+ *
+ * @package Drupal\update_helper\Events
+ */
+class CommandExecuteEvent extends Event {
+
+  /**
+   * Console command for this event.
+   *
+   * @var \Drupal\Console\Core\Command\Command
+   */
+  protected $command;
+
+  /**
+   * Module name.
+   *
+   * @var string
+   */
+  protected $module;
+
+  /**
+   * Update number.
+   *
+   * @var int
+   */
+  protected $updateNumber;
+
+  /**
+   * Command options.
+   *
+   * @var array
+   */
+  protected $commandOptions;
+
+  /**
+   * ConfigurationUpdateGeneratedEvent constructor.
+   *
+   * @param \Drupal\Console\Core\Command\Command $command
+   *   Command that for which this event is triggered.
+   * @param string $module
+   *   Module name.
+   * @param int $update_number
+   *   Update number.
+   * @param array $command_options
+   *   Command options.
+   */
+  public function __construct(Command $command, $module, $update_number, array $command_options) {
+    $this->command = $command;
+    $this->module = $module;
+    $this->updateNumber = $update_number;
+    $this->commandOptions = $command_options;
+  }
+
+  /**
+   * Get drupal console command.
+   *
+   * @return \Drupal\Console\Core\Command\Command
+   *   Returns drupal console command.
+   */
+  public function getTarget() {
+    return $this->command;
+  }
+
+  /**
+   * Get module name.
+   *
+   * @return string
+   *   Returns module name.
+   */
+  public function getModule() {
+    return $this->module;
+  }
+
+  /**
+   * Get update number.
+   *
+   * @return int
+   *   Returns update number.
+   */
+  public function getUpdateNumber() {
+    return $this->updateNumber;
+  }
+
+  /**
+   * Get options.
+   *
+   * @return array
+   *   Returns options.
+   */
+  public function getOptions() {
+    return $this->commandOptions;
+  }
+
+}

@@ -1,0 +1,19 @@
+{% block file_methods %}
+{% if not file_exists %}
+{% include 'module/php_tag.php.twig' %}
+{% endif %}
+
+/**
+ * {{ description }}
+ */
+function {{ update_hook_name }}() {
+  /** @var \Drupal\update_helper\Updater $updateHelper */
+  $updateHelper = \Drupal::service('update_helper.updater');
+
+  // Execute configuration update definitions with logging of success.
+  $updateHelper->executeUpdates([['{{ module }}', '{{ update_hook_name }}']]);
+
+  // Output logged messages to related channel of update execution.
+  return $updateHelper->logger()->output();
+}
+{% endblock %}

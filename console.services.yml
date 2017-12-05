@@ -1,0 +1,11 @@
+services:
+  update_helper.generate_helper_update:
+    class: Drupal\update_helper\Command\GenerateConfigurationUpdateCommand
+    arguments: ['@console.extension_manager', '@update_helper.update_generator', '@console.site', '@event_dispatcher']
+    tags:
+      - { name: drupal.command }
+  update_helper.update_generator:
+    class: Drupal\update_helper\Generator\ConfigurationUpdateGenerator
+    arguments: ['@console.extension_manager', '@update_helper.config_handler', '@module_handler']
+    tags:
+      - { name: drupal.generator }

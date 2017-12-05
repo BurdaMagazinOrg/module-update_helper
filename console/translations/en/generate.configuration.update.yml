@@ -1,0 +1,28 @@
+description: 'Generate configuration update.'
+help: 'The <info>"%s"</info> command helps you generate configuration update.'
+welcome: 'Welcome to the configuration update generator'
+options:
+  module: 'The module name where the update will be stored'
+  update-n: 'Update hook number'
+  description: 'Description for update'
+  include-modules: 'List of modules which configurations should be included in the update (empty for all)'
+  filter-modules: 'Regex filter for modules that should be included in update'
+questions:
+  module: 'Enter the module name where the update will be stored'
+  update-n: 'Please provide the number for update hook to be implemented'
+  description: 'Please enter a description text for update function and checklist entry'
+  include-modules: 'Please provide a comma-separated list of modules which configurations should be included in update (empty for all)'
+  filter-modules: 'Please enter regex filter for modules that should be included in the update'
+defaults:
+  description: 'Update configuration.'
+messages:
+  success: 'Update is successfully generated.'
+  no-update: 'There are no changes that should be exported for the update.'
+  wrong-update-n: 'The update number "%s" is invalid'
+examples:
+  - description: 'Generate a configuration update and update hook with update N in module'
+    execution: |
+      drupal generate:configuration:update  \
+          --module="update_helper"  \
+          --update-n="8001"  \
+          --description="Update configuration."

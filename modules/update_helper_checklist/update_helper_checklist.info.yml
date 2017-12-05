@@ -1,0 +1,8 @@
+name: 'Update Helper Checklist'
+description: 'Provide support for configuration update checklist.'
+type: module
+core: 8.x
+dependencies:
+  - update_helper:update_helper
+  - checklistapi:checklistapi
+package: Configuration
