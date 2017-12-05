@@ -41,6 +41,13 @@ class CommandExecuteEvent extends Event {
   protected $commandOptions;
 
   /**
+   * Flag if execution was successful.
+   *
+   * @var bool
+   */
+  protected $successful;
+
+  /**
    * ConfigurationUpdateGeneratedEvent constructor.
    *
    * @param \Drupal\Console\Core\Command\Command $command
@@ -51,12 +58,15 @@ class CommandExecuteEvent extends Event {
    *   Update number.
    * @param array $command_options
    *   Command options.
+   * @param bool $successful
+   *   Successful execution of command.
    */
-  public function __construct(Command $command, $module, $update_number, array $command_options) {
+  public function __construct(Command $command, $module, $update_number, array $command_options, $successful) {
     $this->command = $command;
     $this->module = $module;
     $this->updateNumber = $update_number;
     $this->commandOptions = $command_options;
+    $this->successful = $successful;
   }
 
   /**
@@ -97,6 +107,16 @@ class CommandExecuteEvent extends Event {
    */
   public function getOptions() {
     return $this->commandOptions;
+  }
+
+  /**
+   * Returns is command execution successful.
+   *
+   * @return bool
+   *   Returns status of command execution.
+   */
+  public function getSuccessful() {
+    return $this->successful;
   }
 
 }

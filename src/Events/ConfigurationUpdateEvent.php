@@ -33,4 +33,34 @@ class ConfigurationUpdateEvent extends Event {
     $this->successful = $successful;
   }
 
+  /**
+   * Get module name.
+   *
+   * @return string
+   *   Returns module name.
+   */
+  public function getModule() {
+    return $this->module;
+  }
+
+  /**
+   * Get update name.
+   *
+   * @return string
+   *   Returns update name.
+   */
+  public function getUpdateName() {
+    return $this->updateName;
+  }
+
+  /**
+   * Get status for configuration update.
+   *
+   * @return bool
+   *   Returns status for configuration update.
+   */
+  public function isSuccessful() {
+    return $this->successful;
+  }
+
 }

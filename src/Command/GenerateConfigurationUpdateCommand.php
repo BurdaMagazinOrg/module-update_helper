@@ -7,6 +7,7 @@ use Drupal\Console\Command\Shared\ModuleTrait;
 use Drupal\Console\Extension\Manager;
 use Drupal\Console\Utils\Site;
 use Drupal\update_helper\Events\CommandConfigureEvent;
+use Drupal\update_helper\Events\CommandExecuteEvent;
 use Drupal\update_helper\Events\CommandInteractEvent;
 use Drupal\update_helper\Events\UpdateHelperEvents;
 use Drupal\update_helper\Generator\ConfigurationUpdateGenerator;
@@ -151,19 +152,21 @@ class GenerateConfigurationUpdateCommand extends Command {
       );
     }
 
+    $successful = TRUE;
     if ($this->generator->generateUpdate($module, $update_number, $include_modules)) {
       // TODO: Move also in Event.
       $this->generator->generateHook($module, $update_number, $description);
 
-      // Get additional options provided by other modules.
-      $event = new CommandInteractEvent($this, $input, $io);
-      $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
-
       $io->info($this->trans('commands.generate.configuration.update.messages.success'));
     }
     else {
+      $successful = FALSE;
       $io->info($this->trans('commands.generate.configuration.update.messages.no-update'));
     }
+
+    // Get additional options provided by other modules.
+    $event = new CommandExecuteEvent($this, $module, $update_number, $input->getOptions(), $successful);
+    $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
 
     return 0;
   }

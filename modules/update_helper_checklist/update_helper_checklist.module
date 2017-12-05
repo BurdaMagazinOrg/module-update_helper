@@ -36,7 +36,7 @@ function _update_helper_checklist_checklistapi_checklist_items() {
 
   $tasks = [];
   if (is_file($updates_file)) {
-    Yaml::parse(file_get_contents($updates_file));
+    $tasks = Yaml::parse(file_get_contents($updates_file));
   }
 
   foreach ($tasks as $version => $updates) {

@@ -62,8 +62,6 @@ class ConfigurationUpdateGenerator extends Generator {
     $module_path = $this->extensionManager->getModule($module)->getPath();
     $checklist_file = $module_path . '/updates.yml';
 
-    $this->renderer->addSkeletonDir(__DIR__ . '/../../templates/console');
-
     $parameters = [
       'update_hook_name' => $module . '_update_' . $update_number,
       'file_exists' => file_exists($checklist_file),

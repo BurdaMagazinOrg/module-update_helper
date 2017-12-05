@@ -72,6 +72,9 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
       $optionsEvent->getTarget()
         ->trans('commands.generate.configuration.update.checklist.options.failure-message')
     );
+
+    // Add configuration to Generator, before renderer engine is generated.
+    $this->generator->addSkeletonDir(__DIR__ . '/../../templates/console');
   }
 
   /**
@@ -83,12 +86,12 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   public function onInteract(CommandInteractEvent $wizardEvent) {
     $targetCommand = $wizardEvent->getTarget();
     $input = $wizardEvent->getInput();
+
+    /** @var \Drupal\Console\Core\Style\DrupalStyle $output */
     $output = $wizardEvent->getOutput();
 
     $success_message = $input->getOption(static::$successMessageName);
     $failure_message = $input->getOption(static::$failureMessageName);
-
-    file_put_contents('/Users/d437164/Documents/devel/test-sites/drupal_update_helper/zzz.txt', 'will see');
 
     // Get success message for checklist.
     if (!$success_message) {
@@ -116,6 +119,11 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    *   Event.
    */
   public function onExecute(CommandExecuteEvent $event) {
+    // If triggerer command wasn't successful, then nothing should be created.
+    if (!$event->getSuccessful()) {
+      return;
+    }
+
     $options = $event->getOptions();
 
     // TODO: Translate!!!

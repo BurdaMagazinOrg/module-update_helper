@@ -11,7 +11,7 @@ function {{ update_hook_name }}() {
   $updateHelper = \Drupal::service('update_helper.updater');
 
   // Execute configuration update definitions with logging of success.
-  $updateHelper->executeUpdates([['{{ module }}', '{{ update_hook_name }}']]);
+  $updateHelper->executeUpdate('{{ module }}', '{{ update_hook_name }}');
 
   // Output logged messages to related channel of update execution.
   return $updateHelper->logger()->output();
