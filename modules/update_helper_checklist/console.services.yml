@@ -6,6 +6,6 @@ services:
       - { name: drupal.generator }
   update_helper_checklist.wizard_options_subscriber:
     class: Drupal\update_helper_checklist\Events\CommandGcuSubscriber
-    arguments: ['@update_helper_checklist.update_generator']
+    arguments: ['@update_helper_checklist.update_generator', '@console.translator_manager']
     tags:
       - { name: event_subscriber }

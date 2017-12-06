@@ -103,7 +103,7 @@ function update_helper_checklist_toolbar() {
         '#title' => t('Pending updates'),
         '#url' => Url::fromRoute($checklist->getRouteName()),
         '#attributes' => [
-          'class' => ['toolbar-icon', 'update-helper__toolbar-icon'],
+          'class' => ['toolbar-icon', 'update-helper-checklist__toolbar-icon'],
           'aria-pressed' => 'false',
         ],
       ],

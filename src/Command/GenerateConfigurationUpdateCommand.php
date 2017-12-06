@@ -184,13 +184,14 @@ class GenerateConfigurationUpdateCommand extends Command {
     $update_number = $input->getOption('update-n');
     $description = $input->getOption('description');
 
-    // TODO: Get this from command defintion!
+    // TODO: Get this from command definition!
     // If at least one required value is requested by wizard, then request
     // optional values too.
     $use_wizard_for_optional = empty($module) || empty($update_number) || empty($description);
 
     // Get module name where update will be saved.
     if (!$module) {
+      // TODO: Get only modules that have some configuration changes.
       // @see Drupal\Console\Command\Shared\ModuleTrait::moduleQuestion
       $module = $this->moduleQuestion($io);
       $input->setOption('module', $module);

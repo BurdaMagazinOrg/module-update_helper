@@ -2,12 +2,12 @@
  * Toolbar tab icon.
  */
 
-.toolbar-bar .update_helper_checklist__toolbar-icon.toolbar-item {
+.toolbar-bar .update-helper-checklist__toolbar-icon.toolbar-item {
   color: orangered;
 }
 
-.toolbar-bar .update_helper_checklist__toolbar-icon:before,
-.toolbar-bar .update_helper_checklist__toolbar-icon:active:before,
-.toolbar-bar .update_helper_checklist__toolbar-icon.active:before {
+.toolbar-bar .update-helper-checklist__toolbar-icon:before,
+.toolbar-bar .update-helper-checklist__toolbar-icon:active:before,
+.toolbar-bar .update-helper-checklist__toolbar-icon.active:before {
   background-image: url(../files/images/wrench.svg);
 }
