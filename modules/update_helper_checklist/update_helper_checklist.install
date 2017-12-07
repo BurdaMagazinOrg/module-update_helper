@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * Install and update hooks for update_helper_checklist module.
+ */
+
+/**
+ * Installation hoot for update helper checklist module.
+ */
+function update_helper_checklist_install() {
+  /** @var \Drupal\update_helper_checklist\UpdateChecklist $checkList */
+  $checkList = \Drupal::service('update_helper_checklist.update_checklist');
+
+  // Mark all updates as successful on install.
+  // TODO: Improve - Get information from executed update hooks, what to mark.
+  $checkList->markAllUpdates();
+}

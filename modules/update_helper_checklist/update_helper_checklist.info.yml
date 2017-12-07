@@ -1,5 +1,5 @@
 name: 'Update Helper Checklist'
-description: 'Provide support for configuration update checklist.'
+description: 'Provide integration of Update Helper module with checklist.'
 type: module
 core: 8.x
 dependencies:

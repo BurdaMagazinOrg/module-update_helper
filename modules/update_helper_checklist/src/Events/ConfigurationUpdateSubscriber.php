@@ -45,10 +45,10 @@ class ConfigurationUpdateSubscriber implements EventSubscriberInterface {
    */
   public function onConfigurationUpdate(ConfigurationUpdateEvent $event) {
     if ($event->isSuccessful()) {
-      $this->updateChecklist->markUpdatesSuccessful([$event->getUpdateName()]);
+      $this->updateChecklist->markUpdatesSuccessful([$event->getModule() => [$event->getUpdateName()]]);
     }
     else {
-      $this->updateChecklist->markUpdatesFailed([$event->getUpdateName()]);
+      $this->updateChecklist->markUpdatesFailed([$event->getModule() => [$event->getUpdateName()]]);
     }
   }
 

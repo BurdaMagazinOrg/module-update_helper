@@ -32,29 +32,49 @@ function update_helper_checklist_checklistapi_checklist_info() {
  *   Return the items for the update_helper_checklist list.
  */
 function _update_helper_checklist_checklistapi_checklist_items() {
-  $updates_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'updates.yml';
+  /** @var \Drupal\Core\Extension\ModuleHandler $module_handler */
+  $module_handler = \Drupal::service('module_handler');
 
-  $tasks = [];
-  if (is_file($updates_file)) {
-    $tasks = Yaml::parse(file_get_contents($updates_file));
-  }
+  $module_directories = $module_handler->getModuleDirectories();
 
-  foreach ($tasks as $version => $updates) {
-    foreach ($updates as $key => $update) {
-      if (is_array($update)) {
-        $entry = Update::load($key);
-        $status = ($entry && $entry->wasSuccessfulByHook()) ? TRUE : FALSE;
-        if ($status && !empty($update['#description_successful'])) {
-          $tasks[$version][$key]['#description'] .= $update['#description_successful'];
+  $all_tasks = [];
+  foreach ($module_directories as $module_name => $module_directory) {
+    $updates_file = $module_directory . DIRECTORY_SEPARATOR . 'updates_checklist.yml';
+
+    if (!is_file($updates_file)) {
+      // If there is no "updates_checklist.yml" file in module directory, go for
+      // next module.
+      continue;
+    }
+
+    $module_tasks = Yaml::parse(file_get_contents($updates_file));
+    foreach ($module_tasks as $version_key => $updates) {
+      $version_updates = [];
+      foreach ($updates as $update_key => $update) {
+        if (is_array($update)) {
+          // Change update key to contain module name.
+          $update_key = str_replace('.', '_', $module_name . ':' . $update_key);
+          $entry = Update::load($update_key);
+
+          $status = ($entry && $entry->wasSuccessfulByHook()) ? TRUE : FALSE;
+          if ($status && !empty($update['#description_successful'])) {
+            $update['#description'] .= $update['#description_successful'];
+          }
+          elseif (!$status && !empty($update['#description_failed'])) {
+            $update['#description'] .= $update['#description_failed'];
+          }
         }
-        elseif (!$status && !empty($update['#description_failed'])) {
-          $tasks[$version][$key]['#description'] .= $update['#description_failed'];
-        }
+
+        $version_updates[$update_key] = $update;
       }
+
+      // Create unique key for version updates.
+      $all_tasks[$module_name . '-' . $version_key] = $version_updates;
     }
   }
 
-  array_walk_recursive($tasks, function (&$value, $key) {
+  // Prepare tasks for front-end representation.
+  array_walk_recursive($all_tasks, function (&$value, $key) {
     if ($key == '#url') {
       $value = Url::fromUri($value);
       if ($value->isExternal()) {
@@ -68,17 +88,13 @@ function _update_helper_checklist_checklistapi_checklist_items() {
     }
   });
 
-  return array_reverse($tasks);
+  return array_reverse($all_tasks);
 }
 
 /**
  * Implements hook_toolbar().
  */
 function update_helper_checklist_toolbar() {
-  if (!\Drupal::service('update_helper_checklist.update_checklist')->isAvailable()) {
-    return [];
-  }
-
   $user = \Drupal::currentUser();
 
   /** @var Drupal\checklistapi\ChecklistapiChecklist $checklist */

@@ -25,6 +25,21 @@ class Update extends ContentEntityBase implements UpdateInterface {
 
   /**
    * {@inheritdoc}
+   */
+  public function wasSuccessfulByHook() {
+    return $this->get('successful_by_hook')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSuccessfulByHook($success) {
+    $this->set('successful_by_hook', $success);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * When a new entity instance is added, set the user_id entity reference to
    * the current user as the creator of the instance.
@@ -69,21 +84,6 @@ class Update extends ContentEntityBase implements UpdateInterface {
       $changed = max($translation_changed, $changed);
     }
     return $changed;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function wasSuccessfulByHook() {
-    return $this->get('successful_by_hook')->value;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setSuccessfulByHook($success) {
-    $this->set('successful_by_hook', $success);
-    return $this;
   }
 
   /**

@@ -1,6 +1,6 @@
 options:
-  success-message: 'Success message for checklist'
-  failure-message: 'Failure message for checklist'
+  success-message: 'Success message for checklist entry'
+  failure-message: 'Failure message for checklist entry'
 questions:
   success-message: 'Please enter a message that will be displayed in checklist entry when the update is successful'
   failure-message: 'Please enter a message that will be displayed in checklist entry when the update has failed'

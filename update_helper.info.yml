@@ -1,5 +1,5 @@
 name: 'Update Helper'
-description: 'Provide support for configuration updates.'
+description: 'Helper tool for generation and applying of configuration updates.'
 type: module
 core: 8.x
 dependencies:

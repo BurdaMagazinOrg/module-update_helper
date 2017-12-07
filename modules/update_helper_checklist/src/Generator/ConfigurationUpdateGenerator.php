@@ -59,9 +59,8 @@ class ConfigurationUpdateGenerator extends Generator {
    *   Checklist failed message.
    */
   public function generate($module, $update_number, $description, $success_message, $failure_message) {
-    // TODO: Get all updates.yml from every module.
     $module_path = $this->extensionManager->getModule($module)->getPath();
-    $checklist_file = $module_path . '/updates.yml';
+    $checklist_file = $module_path . '/updates_checklist.yml';
 
     $parameters = [
       'update_hook_name' => $module . '_update_' . $update_number,
