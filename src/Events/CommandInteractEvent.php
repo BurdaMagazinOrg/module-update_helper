@@ -8,7 +8,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
- * Class WizardOptionsEvent.
+ * Event for command interactive.
  *
  * @package Drupal\update_helper\Events
  */
@@ -36,7 +36,7 @@ class CommandInteractEvent extends Event {
   protected $output;
 
   /**
-   * CommandWizardEvent constructor.
+   * Command interact event constructor.
    *
    * @param \Drupal\Console\Core\Command\Command $command
    *   Command that for which this event is triggered.
@@ -55,9 +55,9 @@ class CommandInteractEvent extends Event {
    * Command that for what this event is triggered.
    *
    * @return \Drupal\Console\Core\Command\Command
-   *   Returns target command.
+   *   Returns command.
    */
-  public function getTarget() {
+  public function getCommand() {
     return $this->command;
   }
 

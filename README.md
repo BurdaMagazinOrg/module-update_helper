@@ -7,6 +7,8 @@ This module offers supporting functionalities to make configuration updates easi
 This module has Drupal Console command. In order to execute it properly, you have to use Drupal console installed with your project.
 In case of composer build, it's: `[project directory]/vendor/bin/drupal`
 
+Drupal console version has to be greater then 1.2.0.
+
 ### Provided features
 
 Update helper module provides Drupal console command that will generate update configuration changes (it's called configuration update definition or CUD). Configuration update definition (CUD) will be stored in `config/update` directory of the module and it can be easily executed with update helper.

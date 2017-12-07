@@ -59,14 +59,14 @@ class UpdateLogger extends AbstractLogger {
    *   Returns HTML.
    */
   protected function outputHtml() {
-    $fullLog = '';
+    $full_log = '';
 
-    $currentLogs = $this->cleanLogs();
-    foreach ($currentLogs as $logEntry) {
-      $fullLog .= $logEntry[1] . '<br /><br />';
+    $current_logs = $this->cleanLogs();
+    foreach ($current_logs as $log_entry) {
+      $full_log .= $log_entry[1] . '<br /><br />';
     }
 
-    return $fullLog;
+    return $full_log;
   }
 
   /**
@@ -81,16 +81,16 @@ class UpdateLogger extends AbstractLogger {
       throw new \RuntimeException('Required global method "drush_log" is not available.');
     }
 
-    $currentLogs = $this->cleanLogs();
-    foreach ($currentLogs as $logEntry) {
-      if (isset(static::$psrDrushLogLevels[$logEntry[0]])) {
-        $drushLogLevel = static::$psrDrushLogLevels[$logEntry[0]];
+    $current_logs = $this->cleanLogs();
+    foreach ($current_logs as $log_entry) {
+      if (isset(static::$psrDrushLogLevels[$log_entry[0]])) {
+        $drush_log_level = static::$psrDrushLogLevels[$log_entry[0]];
       }
       else {
-        $drushLogLevel = $logEntry[0];
+        $drush_log_level = $log_entry[0];
       }
 
-      drush_log($logEntry[1], $drushLogLevel);
+      drush_log($log_entry[1], $drush_log_level);
     }
   }
 

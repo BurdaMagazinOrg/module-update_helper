@@ -33,23 +33,23 @@ class ConfigDiffTransformer {
   public function transform($config, $prefix = '') {
     $lines = [];
 
-    $associativeConfig = array_keys($config) !== range(0, count($config) - 1);
+    $associative_config = array_keys($config) !== range(0, count($config) - 1);
 
     foreach ($config as $key => $value) {
-      if (!$associativeConfig) {
+      if (!$associative_config) {
         $key = '-';
       }
 
-      $sectionPrefix = ($prefix) ? $prefix . $this->hierarchyPrefix . $key : $key;
+      $section_prefix = ($prefix) ? $prefix . $this->hierarchyPrefix . $key : $key;
       if (is_array($value) && !empty($value)) {
-        $lines[] = $sectionPrefix;
-        $newlines = $this->transform($value, $sectionPrefix);
-        foreach ($newlines as $line) {
+        $lines[] = $section_prefix;
+        $new_lines = $this->transform($value, $section_prefix);
+        foreach ($new_lines as $line) {
           $lines[] = $line;
         }
       }
       else {
-        $lines[] = $sectionPrefix . $this->valuePrefix . $this->stringifyValue($value);
+        $lines[] = $section_prefix . $this->valuePrefix . $this->stringifyValue($value);
       }
     }
 
@@ -57,39 +57,45 @@ class ConfigDiffTransformer {
   }
 
   /**
-   * {@inheritdoc}
+   * Reverse transformation of diff.
+   *
+   * @param array $config_string_lines
+   *   String configuration lines.
+   *
+   * @return array
+   *   Nested configuration array.
    */
-  public function reverseTransform(array $configStringLines) {
+  public function reverseTransform(array $config_string_lines) {
     $result = [];
 
-    foreach ($configStringLines as $ymlRow) {
-      $keyValue = explode(' : ', $ymlRow);
+    foreach ($config_string_lines as $yml_row) {
+      $key_value = explode(' : ', $yml_row);
 
-      $keyPath = explode('::', $keyValue[0]);
+      $key_path = explode('::', $key_value[0]);
 
-      $lastKey = array_pop($keyPath);
-      $currentElement = &$result;
-      foreach ($keyPath as $key) {
+      $last_key = array_pop($key_path);
+      $current_element = &$result;
+      foreach ($key_path as $key) {
         if ($key === '-') {
-          $key = count($currentElement) - 1;
+          $key = count($current_element) - 1;
         }
-        elseif (!isset($currentElement[$key])) {
-          $currentElement[$key] = [];
+        elseif (!isset($current_element[$key])) {
+          $current_element[$key] = [];
         }
 
-        $currentElement = &$currentElement[$key];
+        $current_element = &$current_element[$key];
       }
 
       $value = [];
-      if (count($keyValue) === 2) {
-        $value = $this->unstringifyValue($keyValue[1]);
+      if (count($key_value) === 2) {
+        $value = $this->unstringifyValue($key_value[1]);
       }
 
-      if ($lastKey === '-') {
-        $currentElement[] = $value;
+      if ($last_key === '-') {
+        $current_element[] = $value;
       }
       else {
-        $currentElement[$lastKey] = $value;
+        $current_element[$last_key] = $value;
       }
 
     }

@@ -90,7 +90,6 @@ class Update extends ContentEntityBase implements UpdateInterface {
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-
     // Standard field, used as unique if primary index.
     $fields['id'] = BaseFieldDefinition::create('string')
       ->setLabel(t('ID'))
@@ -115,6 +114,7 @@ class Update extends ContentEntityBase implements UpdateInterface {
     $fields['langcode'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Language code'))
       ->setDescription(t('The language code of Update entity.'));
+
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the entity was created.'));

@@ -5,16 +5,31 @@ namespace Drupal\update_helper\Events;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
- * Class ConfigurationUpdateFinishedEvent.
+ * Event for configuration update execution.
  *
  * @package Drupal\update_helper\Events
  */
 class ConfigurationUpdateEvent extends Event {
 
+  /**
+   * Module name.
+   *
+   * @var string
+   */
   protected $module;
 
+  /**
+   * Update name.
+   *
+   * @var string
+   */
   protected $updateName;
 
+  /**
+   * Status if update has executed successfully.
+   *
+   * @var bool
+   */
   protected $successful;
 
   /**

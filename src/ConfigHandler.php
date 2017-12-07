@@ -79,26 +79,26 @@ class ConfigHandler {
   /**
    * Config handler constructor.
    *
-   * @param \Drupal\config_update\ConfigListInterface $configList
+   * @param \Drupal\config_update\ConfigListInterface $config_list
    *   Config list service.
-   * @param \Drupal\config_update\ConfigRevertInterface $configReverter
+   * @param \Drupal\config_update\ConfigRevertInterface $config_reverter
    *   Config reverter service.
-   * @param \Drupal\config_update\ConfigDiffInterface $configDiffer
+   * @param \Drupal\config_update\ConfigDiffInterface $config_differ
    *   Config differ service.
-   * @param \Drupal\update_helper\ConfigDiffTransformer $configDiffTransformer
+   * @param \Drupal\update_helper\ConfigDiffTransformer $config_diff_transformer
    *   Configuration transformer for diffing.
-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   Module handler service.
-   * @param \Drupal\Component\Serialization\SerializationInterface $yamlSerializer
+   * @param \Drupal\Component\Serialization\SerializationInterface $yaml_serializer
    *   Array serializer service.
    */
-  public function __construct(ConfigListInterface $configList, ConfigRevertInterface $configReverter, ConfigDiffInterface $configDiffer, ConfigDiffTransformer $configDiffTransformer, ModuleHandlerInterface $moduleHandler, SerializationInterface $yamlSerializer) {
-    $this->configList = $configList;
-    $this->configReverter = $configReverter;
-    $this->configDiffer = $configDiffer;
-    $this->configDiffTransformer = $configDiffTransformer;
-    $this->moduleHandler = $moduleHandler;
-    $this->serializer = $yamlSerializer;
+  public function __construct(ConfigListInterface $config_list, ConfigRevertInterface $config_reverter, ConfigDiffInterface $config_differ, ConfigDiffTransformer $config_diff_transformer, ModuleHandlerInterface $module_handler, SerializationInterface $yaml_serializer) {
+    $this->configList = $config_list;
+    $this->configReverter = $config_reverter;
+    $this->configDiffer = $config_differ;
+    $this->configDiffTransformer = $config_diff_transformer;
+    $this->moduleHandler = $module_handler;
+    $this->serializer = $yaml_serializer;
   }
 
   /**
@@ -107,63 +107,63 @@ class ConfigHandler {
    * It compares Base vs. Active configuration and creates patch with defined
    * name in patch folder.
    *
-   * @param string[] $moduleNames
+   * @param string[] $module_names
    *   Module name that will be used to generate patch for it.
    *
    * @return string|bool
    *   Rendering generated patch file name or FALSE if patch is empty.
    */
-  public function generatePatchFile(array $moduleNames = []) {
-    $updatePatch = [];
+  public function generatePatchFile(array $module_names = []) {
+    $update_patch = [];
 
-    foreach ($moduleNames as $moduleName) {
-      $configurationLists = $this->configList->listConfig('module', $moduleName);
+    foreach ($module_names as $module_name) {
+      $configuration_lists = $this->configList->listConfig('module', $module_name);
 
       // Get required and optional configuration names.
-      $moduleConfigNames = array_merge($configurationLists[1], $configurationLists[2]);
+      $module_config_names = array_merge($configuration_lists[1], $configuration_lists[2]);
 
-      $configNames = $this->getConfigNames(array_intersect($moduleConfigNames, $configurationLists[0]));
-      foreach ($configNames as $configName) {
-        $configDiff = $this->getConfigDiff($configName);
-        $configDiff = $this->filterDiff($configDiff);
-        if (!empty($configDiff)) {
-          $updatePatch[$configName->getFullName()] = [
-            'expected_config' => $this->getExpectedConfig($configDiff),
-            'update_actions' => $this->getUpdateConfig($configDiff),
+      $config_names = $this->getConfigNames(array_intersect($module_config_names, $configuration_lists[0]));
+      foreach ($config_names as $config_name) {
+        $config_diff = $this->getConfigDiff($config_name);
+        $config_diff = $this->filterDiff($config_diff);
+        if (!empty($config_diff)) {
+          $update_patch[$config_name->getFullName()] = [
+            'expected_config' => $this->getExpectedConfig($config_diff),
+            'update_actions' => $this->getUpdateConfig($config_diff),
           ];
         }
       }
     }
 
-    return $updatePatch ? $this->serializer->encode($updatePatch) : FALSE;
+    return $update_patch ? $this->serializer->encode($update_patch) : FALSE;
   }
 
   /**
    * Get diff for single configuration.
    *
-   * @param \Drupal\update_helper\ConfigName $configName
+   * @param \Drupal\update_helper\ConfigName $config_name
    *   Configuration name.
    *
    * @return \Drupal\Component\Diff\Engine\DiffOp[]
    *   Return diff edits.
    */
-  protected function getConfigDiff(ConfigName $configName) {
-    $oldConfig = $this->getConfigFrom(
-      $this->configReverter->getFromActive($configName->getType(), $configName->getName())
+  protected function getConfigDiff(ConfigName $config_name) {
+    $old_config = $this->getConfigFrom(
+      $this->configReverter->getFromActive($config_name->getType(), $config_name->getName())
     );
 
-    $newConfig = $this->getConfigFrom(
-      $this->configReverter->getFromExtension($configName->getType(), $configName->getName())
+    $new_config = $this->getConfigFrom(
+      $this->configReverter->getFromExtension($config_name->getType(), $config_name->getName())
     );
 
-    if (!$this->configDiffer->same($newConfig, $oldConfig)) {
-      $updateDiff = $this->configDiffer->diff(
-        $oldConfig,
-        $newConfig
+    if (!$this->configDiffer->same($new_config, $old_config)) {
+      $update_diff = $this->configDiffer->diff(
+        $old_config,
+        $new_config
       );
 
       /** @var \Drupal\Component\Diff\Engine\DiffOp[] $edits */
-      return $updateDiff->getEdits();
+      return $update_diff->getEdits();
     }
 
     return [];
@@ -197,15 +197,15 @@ class ConfigHandler {
    *   Return configuration array that is expected on old system.
    */
   protected function getExpectedConfig(array $diffs) {
-    $listExpected = [];
+    $list_expected = [];
 
-    foreach ($diffs as $diffOp) {
-      if (!empty($diffOp->orig)) {
-        $listExpected = array_merge($listExpected, $diffOp->orig);
+    foreach ($diffs as $diff_op) {
+      if (!empty($diff_op->orig)) {
+        $list_expected = array_merge($list_expected, $diff_op->orig);
       }
     }
 
-    return $this->configDiffTransformer->reverseTransform($listExpected);
+    return $this->configDiffTransformer->reverseTransform($list_expected);
   }
 
   /**
@@ -218,51 +218,51 @@ class ConfigHandler {
    *   Return configuration array that should be applied.
    */
   protected function getUpdateConfig(array $diffs) {
-    $listUpdate = [
+    $list_update = [
       'add' => [],
       'change' => [],
       'delete' => [],
     ];
 
-    foreach ($diffs as $diffOp) {
-      if (!empty($diffOp->closing)) {
-        if ($diffOp->type === 'change') {
-          $removableEdits = $this->getRemovableEdits($diffOp->orig, $diffOp->closing);
-          if (!empty($removableEdits)) {
-            $listUpdate['delete'] = array_merge($listUpdate['delete'], $removableEdits);
+    foreach ($diffs as $diff_op) {
+      if (!empty($diff_op->closing)) {
+        if ($diff_op->type === 'change') {
+          $removable_edits = $this->getRemovableEdits($diff_op->orig, $diff_op->closing);
+          if (!empty($removable_edits)) {
+            $list_update['delete'] = array_merge($list_update['delete'], $removable_edits);
           }
         }
 
-        $listUpdate[$diffOp->type] = array_merge($listUpdate[$diffOp->type], $diffOp->closing);
+        $list_update[$diff_op->type] = array_merge($list_update[$diff_op->type], $diff_op->closing);
       }
-      elseif ($diffOp->type === 'delete' && !empty($diffOp->orig)) {
-        $listUpdate[$diffOp->type] = array_merge($listUpdate[$diffOp->type], $diffOp->orig);
+      elseif ($diff_op->type === 'delete' && !empty($diff_op->orig)) {
+        $list_update[$diff_op->type] = array_merge($list_update[$diff_op->type], $diff_op->orig);
       }
     }
 
-    $listUpdate = array_filter($listUpdate);
-    foreach ($listUpdate as $action => $edits) {
-      $listUpdate[$action] = $this->configDiffTransformer->reverseTransform($edits);
+    $list_update = array_filter($list_update);
+    foreach ($list_update as $action => $edits) {
+      $list_update[$action] = $this->configDiffTransformer->reverseTransform($edits);
     }
 
-    return $listUpdate;
+    return $list_update;
   }
 
   /**
    * Get edits that should be removed before applying change action.
    *
-   * @param array $originalEdits
+   * @param array $original_edits
    *   Original list of edits for compare.
-   * @param array $newEdits
+   * @param array $new_edits
    *   New list of edits for compare.
    *
    * @return array
    *   Returns list of edits that should be removed.
    */
-  protected function getRemovableEdits(array $originalEdits, array $newEdits) {
-    $additionalEdits = array_udiff($originalEdits, $newEdits, function ($ymlRow1, $ymlRow2) {
-      $key1 = explode(' : ', $ymlRow1);
-      $key2 = explode(' : ', $ymlRow2);
+  protected function getRemovableEdits(array $original_edits, array $new_edits) {
+    $additional_edits = array_udiff($original_edits, $new_edits, function ($yml_row1, $yml_row2) {
+      $key1 = explode(' : ', $yml_row1);
+      $key2 = explode(' : ', $yml_row2);
 
       // Values from flat array will be marked for removal.
       if (substr($key1[0], -3) === '::-' && substr($key2[0], -3) === '::-') {
@@ -272,7 +272,7 @@ class ConfigHandler {
       return strcmp($key1[0], $key2[0]);
     });
 
-    return $additionalEdits;
+    return $additional_edits;
   }
 
   /**
@@ -280,83 +280,83 @@ class ConfigHandler {
    *
    * Not needed configuration parameters will be stripped.
    *
-   * @param mixed $configData
+   * @param mixed $config_data
    *   Configuration data that should be checked.
    *
    * @return array
    *   Returns configuration data array if it's not empty configuration,
    *   otherwise returns empty array.
    */
-  protected function getConfigFrom($configData) {
-    if (empty($configData)) {
+  protected function getConfigFrom($config_data) {
+    if (empty($config_data)) {
       return [];
     }
 
     // Strip params that are not needed.
     foreach ($this->stripConfigParams as $param) {
-      if (isset($configData[$param])) {
-        unset($configData[$param]);
+      if (isset($config_data[$param])) {
+        unset($config_data[$param]);
       }
     }
 
-    return $configData;
+    return $config_data;
   }
 
   /**
    * Get list of ConfigName instances from list of config names.
    *
-   * @param array $configList
+   * @param array $config_list
    *   List of config names (string).
    *
    * @return array
    *   List of ConfigName instances crated from string config name.
    */
-  protected function getConfigNames(array $configList) {
-    $configNames = [];
-    foreach ($configList as $configFile) {
-      $configNames[] = ConfigName::createByFullName($configFile);
+  protected function getConfigNames(array $config_list) {
+    $config_names = [];
+    foreach ($config_list as $config_file) {
+      $config_names[] = ConfigName::createByFullName($config_file);
     }
 
-    return $configNames;
+    return $config_names;
   }
 
   /**
    * Get full path for update patch file.
    *
-   * @param string $moduleName
+   * @param string $module_name
    *   Module name.
-   * @param string $updateName
+   * @param string $update_name
    *   Update name.
-   * @param bool $createDirectory
+   * @param bool $create_directory
    *   Flag if directory should be created.
    *
    * @return string
    *   Returns full path file name for update patch.
    */
-  public function getPatchFile($moduleName, $updateName, $createDirectory = FALSE) {
-    $updateDir = $this->moduleHandler->getModule($moduleName)->getPath() . $this->baseUpdatePath;
+  public function getPatchFile($module_name, $update_name, $create_directory = FALSE) {
+    $update_dir = $this->moduleHandler->getModule($module_name)->getPath() . $this->baseUpdatePath;
 
     // Ensure that directory exists.
-    if (!is_dir($updateDir) && $createDirectory) {
-      mkdir($updateDir, 0755, TRUE);
+    if (!is_dir($update_dir) && $create_directory) {
+      mkdir($update_dir, 0755, TRUE);
     }
 
-    return $updateDir . '/' . $updateName . '.yml';
+    return $update_dir . '/' . $update_name . '.yml';
   }
 
   /**
    * Load update definition from file.
    *
-   * @param string $moduleName
+   * @param string $module_name
    *   Module name.
-   * @param string $updateName
+   * @param string $update_name
    *   Update name.
    *
    * @return mixed
    *   Returns update definition.
    */
-  public function loadUpdate($moduleName, $updateName) {
-    return $this->serializer->decode(file_get_contents($this->getPatchFile($moduleName, $updateName)));
+  public function loadUpdate($module_name, $update_name) {
+    return $this->serializer->decode(file_get_contents($this->getPatchFile($module_name, $update_name)));
   }
 
 }

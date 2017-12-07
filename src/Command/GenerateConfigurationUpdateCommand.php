@@ -21,6 +21,8 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * Generate configuration update command class.
  *
+ * TODO: Add handling of event errors.
+ *
  * @Drupal\Console\Annotations\DrupalCommand (
  *     extension="update_helper",
  *     extensionType="module"
@@ -152,21 +154,24 @@ class GenerateConfigurationUpdateCommand extends Command {
       );
     }
 
-    $successful = TRUE;
+    $successful = FALSE;
     if ($this->generator->generateUpdate($module, $update_number, $include_modules)) {
       // TODO: Move also in Event.
       $this->generator->generateHook($module, $update_number, $description);
 
-      $io->info($this->trans('commands.generate.configuration.update.messages.success'));
-    }
-    else {
-      $successful = FALSE;
-      $io->info($this->trans('commands.generate.configuration.update.messages.no-update'));
+      $successful = TRUE;
     }
 
     // Get additional options provided by other modules.
     $event = new CommandExecuteEvent($this, $module, $update_number, $input->getOptions(), $successful);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
+
+    if ($successful) {
+      $io->info($this->trans('commands.generate.configuration.update.messages.success'));
+    }
+    else {
+      $io->info($this->trans('commands.generate.configuration.update.messages.no-update'));
+    }
 
     return 0;
   }
@@ -184,10 +189,10 @@ class GenerateConfigurationUpdateCommand extends Command {
     $update_number = $input->getOption('update-n');
     $description = $input->getOption('description');
 
-    // TODO: Get this from command definition!
-    // If at least one required value is requested by wizard, then request
-    // optional values too.
-    $use_wizard_for_optional = empty($module) || empty($update_number) || empty($description);
+    // TODO: Get information about optional arguments from command definition!
+    // If at least one required value is requested by interactive mode, then
+    // request optional values too.
+    $use_interact_for_optional = empty($module) || empty($update_number) || empty($description);
 
     // Get module name where update will be saved.
     if (!$module) {
@@ -230,7 +235,7 @@ class GenerateConfigurationUpdateCommand extends Command {
       $input->setOption('update-n', $update_number);
     }
 
-    // Get description from wizard.
+    // Get description from interactive mode.
     if (!$description) {
       $description = $io->ask(
         $this->trans('commands.generate.configuration.update.questions.description'),
@@ -241,7 +246,7 @@ class GenerateConfigurationUpdateCommand extends Command {
 
     // Get list of modules that are included in update.
     $include_modules = $input->getOption('include-modules');
-    if (!$include_modules && $use_wizard_for_optional) {
+    if (!$include_modules && $use_interact_for_optional) {
       $include_modules = $io->ask(
         $this->trans('commands.generate.configuration.update.questions.include-modules'),
         ' '

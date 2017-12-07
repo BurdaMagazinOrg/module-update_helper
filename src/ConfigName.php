@@ -35,69 +35,69 @@ class ConfigName {
   /**
    * Create ConfigName instance from full configuration name.
    *
-   * @param string $fullConfigName
+   * @param string $full_config_name
    *   Full config name.
    *
    * @return ConfigName
    *   Return instance of ConfigName.
    */
-  public static function createByFullName($fullConfigName) {
-    $configName = new static();
+  public static function createByFullName($full_config_name) {
+    $config_name = new static();
 
-    $configPair = $configName->parseFullName($fullConfigName);
+    $configPair = $config_name->parseFullName($full_config_name);
 
-    $configName->type = $configPair['type'];
-    $configName->name = $configPair['name'];
+    $config_name->type = $configPair['type'];
+    $config_name->name = $configPair['name'];
 
-    return $configName;
+    return $config_name;
   }
 
   /**
    * Create ConfigName instance from configuration type and name.
    *
-   * @param string $configType
+   * @param string $config_type
    *   Config type.
-   * @param string $configName
+   * @param string $config_name
    *   Config name.
    *
    * @return ConfigName
    *   Return instance of ConfigName.
    */
-  public static function createByTypeName($configType, $configName) {
-    $configNameInstance = new static();
+  public static function createByTypeName($config_type, $config_name) {
+    $config_name_instance = new static();
 
-    $configNameInstance->type = $configType;
-    $configNameInstance->name = $configName;
+    $config_name_instance->type = $config_type;
+    $config_name_instance->name = $config_name;
 
-    return $configNameInstance;
+    return $config_name_instance;
   }
 
   /**
    * Parse full config name and create array with config type and name.
    *
-   * @param string $fullConfigName
+   * @param string $full_config_name
    *   Full config name.
    *
    * @return array
    *   Returns array with config type and name.
    */
-  protected function parseFullName($fullConfigName) {
+  protected function parseFullName($full_config_name) {
     $result = [
       'type' => static::SYSTEM_SIMPLE_CONFIG,
-      'name' => $fullConfigName,
+      'name' => $full_config_name,
     ];
 
     $prefix = static::SYSTEM_SIMPLE_CONFIG . '.';
-    if (strpos($fullConfigName, $prefix)) {
-      $result['name'] = substr($fullConfigName, strlen($prefix));
+    if (strpos($full_config_name, $prefix)) {
+      $result['name'] = substr($full_config_name, strlen($prefix));
     }
     else {
       foreach ($this->entityTypeManager()->getDefinitions() as $entityType => $definition) {
         if ($definition->entityClassImplements('Drupal\Core\Config\Entity\ConfigEntityInterface')) {
           $prefix = $definition->getConfigPrefix() . '.';
-          if (strpos($fullConfigName, $prefix) === 0) {
+          if (strpos($full_config_name, $prefix) === 0) {
             $result['type'] = $entityType;
-            $result['name'] = substr($fullConfigName, strlen($prefix));
+            $result['name'] = substr($full_config_name, strlen($prefix));
           }
         }
       }

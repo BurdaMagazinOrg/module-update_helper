@@ -4,6 +4,7 @@ namespace Drupal\update_helper_checklist\Generator;
 
 use Drupal\Console\Core\Generator\Generator;
 use Drupal\Console\Extension\Manager;
+use Drupal\update_helper_checklist\UpdateChecklist;
 
 /**
  * Update hook generator for generate:configuration:update console command.
@@ -60,7 +61,7 @@ class ConfigurationUpdateGenerator extends Generator {
    */
   public function generate($module, $update_number, $description, $success_message, $failure_message) {
     $module_path = $this->extensionManager->getModule($module)->getPath();
-    $checklist_file = $module_path . '/updates_checklist.yml';
+    $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
 
     $parameters = [
       'update_hook_name' => $module . '_update_' . $update_number,

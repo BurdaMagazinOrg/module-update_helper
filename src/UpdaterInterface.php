@@ -26,13 +26,13 @@ interface UpdaterInterface {
   /**
    * List of full configuration names to import.
    *
-   * @param array $config_List
+   * @param array $config_list
    *   List of configurations.
    *
    * @return bool
    *   Returns if import was successful.
    */
-  public function importConfigs(array $config_List);
+  public function importConfigs(array $config_list);
 
   /**
    * Execute update of configuration from update definitions.

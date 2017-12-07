@@ -17,6 +17,8 @@ use Drupal\update_helper_checklist\Entity\Update;
  */
 class UpdateChecklist {
 
+  public static $updateChecklistFileName = 'updates_checklist.yml';
+
   /**
    * Site configFactory object.
    *
@@ -175,7 +177,6 @@ class UpdateChecklist {
    *   Array of the bulletpoints.
    */
   protected function checkListPoints(array $module_update_list) {
-
     /** @var \Drupal\Core\Config\Config $update_check_list */
     $update_check_list = $this->configFactory
       ->getEditable('checklistapi.progress.update_helper_checklist');

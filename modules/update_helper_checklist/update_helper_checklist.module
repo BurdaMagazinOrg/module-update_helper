@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Url;
+use Drupal\update_helper_checklist\UpdateChecklist;
 use Symfony\Component\Yaml\Yaml;
 use Drupal\update_helper_checklist\Entity\Update;
 
@@ -39,7 +40,7 @@ function _update_helper_checklist_checklistapi_checklist_items() {
 
   $all_tasks = [];
   foreach ($module_directories as $module_name => $module_directory) {
-    $updates_file = $module_directory . DIRECTORY_SEPARATOR . 'updates_checklist.yml';
+    $updates_file = $module_directory . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
 
     if (!is_file($updates_file)) {
       // If there is no "updates_checklist.yml" file in module directory, go for

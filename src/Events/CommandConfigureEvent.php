@@ -6,7 +6,7 @@ use Drupal\Console\Core\Command\Command;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
- * Class CommandOptionsEvent.
+ * Event for command configure.
  *
  * @package Drupal\update_helper\Events
  */
@@ -33,9 +33,9 @@ class CommandConfigureEvent extends Event {
    * Command that for what this event is triggered.
    *
    * @return \Drupal\Console\Core\Command\Command
-   *   Returns target command.
+   *   Returns command.
    */
-  public function getTarget() {
+  public function getCommand() {
     return $this->command;
   }
 

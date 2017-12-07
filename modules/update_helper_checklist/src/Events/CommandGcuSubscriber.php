@@ -12,7 +12,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Class WizardOptionsSubscriber.
+ * Subscriber for "generate:configuration:update" command.
  *
  * TODO: Add support for version option, where entry in checklist will be added.
  */
@@ -83,39 +83,39 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   /**
    * Get options for "generate:configuration:update" relevant for checklist.
    *
-   * @param \Drupal\update_helper\Events\CommandConfigureEvent $optionsEvent
+   * @param \Drupal\update_helper\Events\CommandConfigureEvent $configure_event
    *   Command options event.
    */
-  public function onConfigure(CommandConfigureEvent $optionsEvent) {
-    $optionsEvent->addOption(
+  public function onConfigure(CommandConfigureEvent $configure_event) {
+    $configure_event->addOption(
       static::$successMessageName,
       NULL,
       InputOption::VALUE_REQUIRED,
-      $optionsEvent->getTarget()
+      $configure_event->getCommand()
         ->trans('commands.generate.configuration.update.checklist.options.success-message')
     );
 
-    $optionsEvent->addOption(
+    $configure_event->addOption(
       static::$failureMessageName,
       NULL,
       InputOption::VALUE_REQUIRED,
-      $optionsEvent->getTarget()
+      $configure_event->getCommand()
         ->trans('commands.generate.configuration.update.checklist.options.failure-message')
     );
   }
 
   /**
-   * Handle on wizard options creation.
+   * Handle on interactive mode for getting command options.
    *
-   * @param \Drupal\update_helper\Events\CommandInteractEvent $wizardEvent
+   * @param \Drupal\update_helper\Events\CommandInteractEvent $interact_event
    *   Event.
    */
-  public function onInteract(CommandInteractEvent $wizardEvent) {
-    $targetCommand = $wizardEvent->getTarget();
-    $input = $wizardEvent->getInput();
+  public function onInteract(CommandInteractEvent $interact_event) {
+    $command = $interact_event->getCommand();
+    $input = $interact_event->getInput();
 
     /** @var \Drupal\Console\Core\Style\DrupalStyle $output */
-    $output = $wizardEvent->getOutput();
+    $output = $interact_event->getOutput();
 
     $success_message = $input->getOption(static::$successMessageName);
     $failure_message = $input->getOption(static::$failureMessageName);
@@ -123,8 +123,8 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     // Get success message for checklist.
     if (!$success_message) {
       $success_message = $output->ask(
-        $targetCommand->trans('commands.generate.configuration.update.checklist.questions.success-message'),
-        $targetCommand->trans('commands.generate.configuration.update.checklist.defaults.success-message')
+        $command->trans('commands.generate.configuration.update.checklist.questions.success-message'),
+        $command->trans('commands.generate.configuration.update.checklist.defaults.success-message')
       );
       $input->setOption(static::$successMessageName, $success_message);
     }
@@ -132,8 +132,8 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     // Get failure message for checklist.
     if (!$failure_message) {
       $failure_message = $output->ask(
-        $targetCommand->trans('commands.generate.configuration.update.checklist.questions.failure-message'),
-        $targetCommand->trans('commands.generate.configuration.update.checklist.defaults.failure-message')
+        $command->trans('commands.generate.configuration.update.checklist.questions.failure-message'),
+        $command->trans('commands.generate.configuration.update.checklist.defaults.failure-message')
       );
       $input->setOption(static::$failureMessageName, $failure_message);
     }
@@ -142,22 +142,23 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   /**
    * Handles configuration update generation.
    *
-   * @param \Drupal\update_helper\Events\CommandExecuteEvent $event
+   * @param \Drupal\update_helper\Events\CommandExecuteEvent $execute_event
    *   Event.
    */
-  public function onExecute(CommandExecuteEvent $event) {
-    // If triggerer command wasn't successful, then nothing should be created.
-    if (!$event->getSuccessful()) {
+  public function onExecute(CommandExecuteEvent $execute_event) {
+    // If command that triggered this event wasn't successful, then nothing
+    // should be created.
+    if (!$execute_event->getSuccessful()) {
       return;
     }
 
-    $options = $event->getOptions();
+    // Get options provided by command as options or in interactive mode.
+    $options = $execute_event->getOptions();
 
-    // TODO: Translate!!!
     $this->generator->generate(
-      $event->getModule(),
-      $event->getUpdateNumber(),
-      $options['description'] ?: 'Title',
+      $execute_event->getModule(),
+      $execute_event->getUpdateNumber(),
+      $options['description'],
       $options[static::$successMessageName],
       $options[static::$failureMessageName]
     );
