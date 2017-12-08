@@ -14,16 +14,21 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class ConfigurationUpdateSubscriber implements EventSubscriberInterface {
 
+  /**
+   * Update checklist service.
+   *
+   * @var \Drupal\update_helper_checklist\UpdateChecklist
+   */
   protected $updateChecklist;
 
   /**
    * ConfigurationUpdateSubscriber constructor.
    *
-   * @param \Drupal\update_helper_checklist\UpdateChecklist $updateChecklist
+   * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
    *   Update checklist service.
    */
-  public function __construct(UpdateChecklist $updateChecklist) {
-    $this->updateChecklist = $updateChecklist;
+  public function __construct(UpdateChecklist $update_checklist) {
+    $this->updateChecklist = $update_checklist;
   }
 
   /**

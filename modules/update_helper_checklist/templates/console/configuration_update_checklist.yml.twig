@@ -1,11 +1,9 @@
-{#
-TODO: We should add support fot adding of version if it's needed.
-
-vX.YY:
-    '#title': 'Update to UpdateHelper X.YY'
-    '#description': '<h3>These are the new features for this release:</h3>'
-#}
 {% block file_methods %}
+{% if update_version %}
+{{ update_version }}:
+    '#title': 'Update to version {{ update_version }}'
+    '#description': '<h3>These are the new features for this release:</h3>'
+{% endif %}
     {{ update_hook_name }}:
         '#title': '{{ checklist_title }}'
         '#description': '<p>{{ checklist_success }}</p>'

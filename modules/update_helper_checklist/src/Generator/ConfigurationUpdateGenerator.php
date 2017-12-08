@@ -21,13 +21,23 @@ class ConfigurationUpdateGenerator extends Generator {
   protected $extensionManager;
 
   /**
+   * Update checklist service.
+   *
+   * @var \Drupal\update_helper_checklist\UpdateChecklist
+   */
+  protected $updateChecklist;
+
+  /**
    * AuthenticationProviderGenerator constructor.
    *
    * @param \Drupal\Console\Extension\Manager $extension_manager
    *   Extension manager.
+   * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
+   *   Update checklist service.
    */
-  public function __construct(Manager $extension_manager) {
+  public function __construct(Manager $extension_manager, UpdateChecklist $update_checklist) {
     $this->extensionManager = $extension_manager;
+    $this->updateChecklist = $update_checklist;
   }
 
   /**
@@ -52,6 +62,8 @@ class ConfigurationUpdateGenerator extends Generator {
    *   Module name where update will be generated.
    * @param string $update_number
    *   Update number that will be used.
+   * @param string $update_version
+   *   Update version for module.
    * @param string $description
    *   Checklist entry title.
    * @param string $success_message
@@ -59,9 +71,12 @@ class ConfigurationUpdateGenerator extends Generator {
    * @param string $failure_message
    *   Checklist failed message.
    */
-  public function generate($module, $update_number, $description, $success_message, $failure_message) {
+  public function generate($module, $update_number, $update_version, $description, $success_message, $failure_message) {
     $module_path = $this->extensionManager->getModule($module)->getPath();
     $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
+    $update_versions = $this->updateChecklist->getUpdateVersions($module);
+    end($update_versions);
+    $last_update_version = current($update_versions);
 
     $parameters = [
       'update_hook_name' => $module . '_update_' . $update_number,
@@ -69,6 +84,7 @@ class ConfigurationUpdateGenerator extends Generator {
       'checklist_title' => $description,
       'checklist_success' => $success_message,
       'checklist_failed' => $failure_message,
+      'update_version' => ($update_version === $last_update_version) ? '' : $update_version,
     ];
 
     $this->renderFile(

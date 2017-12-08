@@ -7,6 +7,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\update_helper_checklist\Entity\Update;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Update checklist service.
@@ -17,6 +18,11 @@ use Drupal\update_helper_checklist\Entity\Update;
  */
 class UpdateChecklist {
 
+  /**
+   * Update checklist file for configuration updates.
+   *
+   * @var string
+   */
   public static $updateChecklistFileName = 'updates_checklist.yml';
 
   /**
@@ -247,6 +253,27 @@ class UpdateChecklist {
     $update_check_list
       ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items")))
       ->save();
+  }
+
+  /**
+   * Get update version from update checklist file.
+   *
+   * @param string $module
+   *   Module name.
+   *
+   * @return array
+   *   Returns update versions from update checklist file.
+   */
+  public function getUpdateVersions($module) {
+    $module_directories = $this->moduleHandler->getModuleDirectories();
+    $updates_file = $module_directories[$module] . DIRECTORY_SEPARATOR . static::$updateChecklistFileName;
+    if (!is_file($updates_file)) {
+      return [];
+    }
+
+    $updates_checklist = Yaml::parse(file_get_contents($updates_file));
+
+    return array_keys($updates_checklist);
   }
 
 }

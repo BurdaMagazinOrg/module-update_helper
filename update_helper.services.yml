@@ -11,4 +11,4 @@ services:
     arguments: ['@config_update.config_list', '@config_update.config_update', '@update_helper.config_differ', '@update_helper.config_diff_transformer', '@module_handler', '@serialization.yaml']
   update_helper.updater:
     class: Drupal\update_helper\Updater
-    arguments: ['@user.shared_tempstore', '@config.factory', '@module_installer', '@config_update.config_update', '@update_helper.config_handler', '@update_helper.logger', '@event_dispatcher']
+    arguments: ['@config.factory', '@module_installer', '@config_update.config_update', '@update_helper.config_handler', '@update_helper.logger', '@event_dispatcher']

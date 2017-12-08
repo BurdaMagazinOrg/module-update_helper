@@ -140,7 +140,6 @@ class GenerateConfigurationUpdateCommand extends Command {
     }
 
     $module = $input->getOption('module');
-    $description = $input->getOption('description');
     $include_modules = $input->getOption('include-modules');
 
     $update_number = $input->getOption('update-n');
@@ -154,13 +153,8 @@ class GenerateConfigurationUpdateCommand extends Command {
       );
     }
 
-    $successful = FALSE;
-    if ($this->generator->generateUpdate($module, $update_number, $include_modules)) {
-      // TODO: Move also in Event.
-      $this->generator->generateHook($module, $update_number, $description);
-
-      $successful = TRUE;
-    }
+    // Execute configuration update generation.
+    $successful = $this->generator->generate($module, $update_number, $include_modules);
 
     // Get additional options provided by other modules.
     $event = new CommandExecuteEvent($this, $module, $update_number, $input->getOptions(), $successful);

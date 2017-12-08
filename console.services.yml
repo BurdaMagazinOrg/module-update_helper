@@ -6,6 +6,16 @@ services:
       - { name: drupal.command }
   update_helper.update_generator:
     class: Drupal\update_helper\Generator\ConfigurationUpdateGenerator
-    arguments: ['@console.extension_manager', '@update_helper.config_handler', '@module_handler']
+    arguments: ['@update_helper.config_handler', '@module_handler']
     tags:
       - { name: drupal.generator }
+  update_helper.update_hook_generator:
+    class: Drupal\update_helper\Generator\ConfigurationUpdateHookGenerator
+    arguments: ['@console.extension_manager']
+    tags:
+      - { name: drupal.generator }
+  update_helper_checklist.command_subscriber:
+    class: Drupal\update_helper\Events\CommandSubscriber
+    arguments: ['@update_helper.update_hook_generator']
+    tags:
+      - { name: event_subscriber }

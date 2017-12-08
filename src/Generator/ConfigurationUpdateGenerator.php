@@ -3,24 +3,16 @@
 namespace Drupal\update_helper\Generator;
 
 use Drupal\Console\Core\Generator\Generator;
-use Drupal\Console\Extension\Manager;
 use Drupal\Core\Extension\Extension;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\update_helper\ConfigHandler;
 
 /**
- * Update hook generator for generate:configuration:update console command.
+ * Configuration update generator for generate:configuration:update command.
  *
  * @package Drupal\update_helper\Generator
  */
 class ConfigurationUpdateGenerator extends Generator {
-
-  /**
-   * Extension manager.
-   *
-   * @var \Drupal\Console\Extension\Manager
-   */
-  protected $extensionManager;
 
   /**
    * Drupal\update_helper\ConfigHandler definition.
@@ -37,21 +29,17 @@ class ConfigurationUpdateGenerator extends Generator {
   protected $moduleHandler;
 
   /**
-   * AuthenticationProviderGenerator constructor.
+   * Configuration update generator.
    *
-   * @param \Drupal\Console\Extension\Manager $extension_manager
-   *   Extension manager.
    * @param \Drupal\update_helper\ConfigHandler $config_handler
    *   Config handler service.
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    *   Module handler service.
    */
   public function __construct(
-    Manager $extension_manager,
     ConfigHandler $config_handler,
     ModuleHandler $module_handler
   ) {
-    $this->extensionManager = $extension_manager;
     $this->configHandler = $config_handler;
     $this->moduleHandler = $module_handler;
   }
@@ -84,7 +72,7 @@ class ConfigurationUpdateGenerator extends Generator {
    * @return bool
    *   Return if patch file is generated.
    */
-  public function generateUpdate($module_name, $update_number, $module_list) {
+  public function generate($module_name, $update_number, $module_list) {
     if ($module_list) {
       $modules = explode(',', $module_list);
     }
@@ -111,37 +99,6 @@ class ConfigurationUpdateGenerator extends Generator {
     }
 
     return FALSE;
-  }
-
-  /**
-   * Generator Update N function.
-   *
-   * @param string $module
-   *   Module name where update will be generated.
-   * @param string $update_number
-   *   Update number that will be used.
-   * @param string $description
-   *   Description displayed for update hook function.
-   */
-  public function generateHook($module, $update_number, $description = '') {
-    $module_path = $this->extensionManager->getModule($module)->getPath();
-    $update_file = $module_path . '/' . $module . '.install';
-
-    $this->renderer->addSkeletonDir(__DIR__ . '/../../templates/console');
-
-    $parameters = [
-      'description' => $description,
-      'module' => $module,
-      'update_hook_name' => $this->getUpdateFunctionName($module, $update_number),
-      'file_exists' => file_exists($update_file),
-    ];
-
-    $this->renderFile(
-      'configuration_update_hook.php.twig',
-      $update_file,
-      $parameters,
-      FILE_APPEND
-    );
   }
 
 }

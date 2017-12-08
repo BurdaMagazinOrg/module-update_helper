@@ -8,15 +8,21 @@ use Drupal\update_helper\Events\CommandExecuteEvent;
 use Drupal\update_helper\Events\UpdateHelperEvents;
 use Drupal\update_helper\Events\CommandInteractEvent;
 use Drupal\update_helper_checklist\Generator\ConfigurationUpdateGenerator;
+use Drupal\update_helper_checklist\UpdateChecklist;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Subscriber for "generate:configuration:update" command.
- *
- * TODO: Add support for version option, where entry in checklist will be added.
  */
 class CommandGcuSubscriber implements EventSubscriberInterface {
+
+  /**
+   * Key for update version option.
+   *
+   * @var string
+   */
+  protected static $updateVersionName = 'update-version';
 
   /**
    * Key for success message command option.
@@ -47,16 +53,26 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   protected $translatorManager;
 
   /**
+   * Update checklist service.
+   *
+   * @var \Drupal\update_helper_checklist\UpdateChecklist
+   */
+  protected $updateChecklist;
+
+  /**
    * CommandGcuSubscriber constructor.
    *
    * @param \Drupal\update_helper_checklist\Generator\ConfigurationUpdateGenerator $generator
    *   Code generator service.
    * @param \Drupal\Console\Utils\TranslatorManager $translator_manager
    *   Translator manager service.
+   * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
+   *   Update checklist service.
    */
-  public function __construct(ConfigurationUpdateGenerator $generator, TranslatorManager $translator_manager) {
+  public function __construct(ConfigurationUpdateGenerator $generator, TranslatorManager $translator_manager, UpdateChecklist $update_checklist) {
     $this->generator = $generator;
     $this->translatorManager = $translator_manager;
+    $this->updateChecklist = $update_checklist;
 
     // Init required options for this subscriber to work.
     $translator_manager->addResourceTranslationsByExtension('update_helper_checklist', 'module');
@@ -88,6 +104,15 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    */
   public function onConfigure(CommandConfigureEvent $configure_event) {
     $configure_event->addOption(
+      static::$updateVersionName,
+      NULL,
+      InputOption::VALUE_OPTIONAL,
+      $configure_event->getCommand()
+        ->trans('commands.generate.configuration.update.checklist.options.update-version'),
+      ''
+    );
+
+    $configure_event->addOption(
       static::$successMessageName,
       NULL,
       InputOption::VALUE_REQUIRED,
@@ -117,8 +142,22 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     /** @var \Drupal\Console\Core\Style\DrupalStyle $output */
     $output = $interact_event->getOutput();
 
+    $update_version = $input->getOption(static::$updateVersionName);
     $success_message = $input->getOption(static::$successMessageName);
     $failure_message = $input->getOption(static::$failureMessageName);
+
+    // Get update version.
+    if (!$update_version) {
+      $update_versions = $this->updateChecklist->getUpdateVersions($input->getOption('module'));
+      // Set internal pointer to end, to get last update version.
+      end($update_versions);
+
+      $update_version = $output->ask(
+        $command->trans('commands.generate.configuration.update.checklist.questions.update-version'),
+        (empty($update_versions)) ? '8.x-1.0' : current($update_versions)
+      );
+      $input->setOption(static::$updateVersionName, $update_version);
+    }
 
     // Get success message for checklist.
     if (!$success_message) {
@@ -158,6 +197,7 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     $this->generator->generate(
       $execute_event->getModule(),
       $execute_event->getUpdateNumber(),
+      $options[static::$updateVersionName],
       $options['description'],
       $options[static::$successMessageName],
       $options[static::$failureMessageName]
