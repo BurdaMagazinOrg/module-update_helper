@@ -11,6 +11,8 @@ use Drupal\update_helper_checklist\Entity\Update;
  *
  * @group update_helper_checklist
  *
+ * @requires module checklistapi
+ *
  * @package Drupal\Tests\update_helper_checklist\Kernel
  */
 class UpdateChecklistTest extends KernelTestBase {
