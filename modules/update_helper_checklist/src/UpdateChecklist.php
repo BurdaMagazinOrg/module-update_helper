@@ -117,8 +117,8 @@ class UpdateChecklist {
    */
   public function markAllUpdates($status = TRUE) {
     $keys = [];
-    foreach ($this->getChecklist()->items as $versionItems) {
-      foreach ($versionItems as $key => $item) {
+    foreach ($this->getChecklist()->items as $version_items) {
+      foreach ($version_items as $key => $item) {
         if (is_array($item)) {
           $keys[] = $key;
         }
@@ -232,19 +232,19 @@ class UpdateChecklist {
       '#weight',
     ];
 
-    foreach ($this->getChecklist()->items as $versionItems) {
-      foreach ($versionItems as $itemName => $item) {
-        if (!in_array($itemName, $exclude)) {
+    foreach ($this->getChecklist()->items as $version_items) {
+      foreach ($version_items as $item_name => $item) {
+        if (!in_array($item_name, $exclude)) {
           if ($status) {
             $update_check_list
-              ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$itemName", [
+              ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$item_name", [
                 '#completed' => $time,
                 '#uid' => $user,
               ]);
           }
           else {
             $update_check_list
-              ->clear(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$itemName");
+              ->clear(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$item_name");
           }
         }
       }
@@ -266,6 +266,11 @@ class UpdateChecklist {
    */
   public function getUpdateVersions($module) {
     $module_directories = $this->moduleHandler->getModuleDirectories();
+
+    if (empty($module_directories[$module])) {
+      return [];
+    }
+
     $updates_file = $module_directories[$module] . DIRECTORY_SEPARATOR . static::$updateChecklistFileName;
     if (!is_file($updates_file)) {
       return [];

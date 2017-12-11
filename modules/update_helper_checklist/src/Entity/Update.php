@@ -97,7 +97,7 @@ class Update extends ContentEntityBase implements UpdateInterface {
       ->setReadOnly(TRUE)
       ->setSettings([
         'default_value' => '',
-        'max_length' => 50,
+        'max_length' => 128,
         'text_processing' => 0,
       ]);
 

@@ -1,0 +1,4 @@
+name: 'Update Helper Checklist Test'
+description: 'Helper module to test Update Helper Checklist.'
+type: module
+core: 8.x

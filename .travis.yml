@@ -34,7 +34,7 @@ env:
 
     # Configuration variables.
     - DRUPAL_TI_MODULE_NAME="update_helper"
-    - DRUPAL_TI_SIMPLETEST_GROUP="update_helper"
+    - DRUPAL_TI_SIMPLETEST_GROUP="update_helper,update_helper_checklist"
 
     # Define runners and environment vars to include before and after the
     # main runners / environment vars.

@@ -3,6 +3,10 @@
 /**
  * @file
  * Update helper checklist hooks.
+ *
+ * TODO:
+ *   - This requires refactoring, moving things in classes and finding
+ *     duplicate code.
  */
 
 use Drupal\Core\Url;
@@ -93,6 +97,46 @@ function _update_helper_checklist_checklistapi_checklist_items() {
 }
 
 /**
+ * Mark all updates as successful for fresh installed module.
+ *
+ * Implements hook_modules_installed().
+ *
+ * @param array $modules
+ *   List of installed modules.
+ */
+function update_helper_checklist_modules_installed(array $modules) {
+  /** @var \Drupal\Core\Extension\ModuleHandler $module_handler */
+  $module_handler = \Drupal::service('module_handler');
+
+  $modules_checklist = [];
+  $module_directories = $module_handler->getModuleDirectories();
+  foreach ($modules as $module_name) {
+    $updates_file = $module_directories[$module_name] . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
+    if (!is_file($updates_file)) {
+      continue;
+    }
+
+    $updates_checklist = Yaml::parse(file_get_contents($updates_file));
+    foreach ($updates_checklist as $version_items) {
+      foreach ($version_items as $update_hook_name => $checklist_definition) {
+        if (is_array($checklist_definition)) {
+          if (!isset($modules_checklist[$module_name])) {
+            $modules_checklist[$module_name] = [];
+          }
+
+          $modules_checklist[$module_name][] = $update_hook_name;
+        }
+      }
+    }
+  }
+
+  if (!empty($modules_checklist)) {
+    \Drupal::service('update_helper_checklist.update_checklist')
+      ->markUpdatesSuccessful($modules_checklist);
+  }
+}
+
+/**
  * Implements hook_toolbar().
  */
 function update_helper_checklist_toolbar() {
@@ -110,7 +154,8 @@ function update_helper_checklist_toolbar() {
     ],
   ];
 
-  \Drupal::service('renderer')->addCacheableDependency($items['update_helper_checklist'], $checklist->config);
+  \Drupal::service('renderer')
+    ->addCacheableDependency($items['update_helper_checklist'], $checklist->config);
 
   if ($checklist->getPercentComplete() != 100 && $user->hasPermission('view update_helper_checklist checklistapi checklist')) {
     $items['update_helper_checklist'] += [
