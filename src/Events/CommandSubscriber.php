@@ -39,7 +39,7 @@ class CommandSubscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Handles execute for configuration update generation.
+   * Handles execute for configuration update generation to create update hook.
    *
    * @param \Drupal\update_helper\Events\CommandExecuteEvent $execute_event
    *   Command execute event.

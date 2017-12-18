@@ -96,7 +96,7 @@ class ConfigHandlerTest extends KernelTestBase {
     $config->setData($configData)->save(TRUE);
 
     // Generate patch after configuration change.
-    $data = $configHandler->generatePatchFile(['node']);
+    $data = $configHandler->generatePatchFile(['node'], FALSE);
 
     $this->assertEquals($this->getUpdateDefinition(), $data);
   }

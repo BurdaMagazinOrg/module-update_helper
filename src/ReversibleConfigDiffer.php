@@ -56,7 +56,7 @@ class ReversibleConfigDiffer extends ConfigDiffer {
    * @return mixed
    *   Returns stripped configuration.
    */
-  protected function stripIgnore($data) {
+  public function stripIgnore($data) {
     foreach ($this->ignore as $element) {
       unset($data[$element]);
     }

@@ -68,11 +68,13 @@ class ConfigurationUpdateGenerator extends Generator {
    *   Update number that will be used.
    * @param string $module_list
    *   Comma separated list of modules.
+   * @param bool $from_active
+   *   Flag if configuration should be updated from active to Yml file configs.
    *
    * @return bool
    *   Return if patch file is generated.
    */
-  public function generate($module_name, $update_number, $module_list) {
+  public function generate($module_name, $update_number, $module_list, $from_active) {
     if ($module_list) {
       $modules = explode(',', $module_list);
     }
@@ -84,7 +86,7 @@ class ConfigurationUpdateGenerator extends Generator {
     }
 
     // Get patch data and save it into file.
-    $patch_data = $this->configHandler->generatePatchFile($modules);
+    $patch_data = $this->configHandler->generatePatchFile($modules, $from_active);
     if (!empty($patch_data)) {
       $patch_file_path = $this->configHandler->getPatchFile($module_name, $this->getUpdateFunctionName($module_name, $update_number), TRUE);
 

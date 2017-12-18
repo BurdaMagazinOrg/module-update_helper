@@ -6,6 +6,7 @@ options:
   update-n: 'Update hook number'
   description: 'Description for update (will be used as comment for update hook)'
   include-modules: 'List of modules which configurations should be included in the update (empty for all)'
+  from-active: 'Generate update from active configuration in database to configuration in Yml files'
 questions:
   module: 'Enter the module name where the update definition will be saved and update hook generated'
   update-n: 'Please provide the number for update hook to be added'
