@@ -9,8 +9,8 @@ cache:
   - "$HOME/.npm"
 
 php:
-- 7.2
-- 5.6
+  - 7.2
+  - 5.6
 
 branches:
   only:
@@ -18,13 +18,14 @@ branches:
 
 env:
   global:
-  - PATH="$PATH:$HOME/.composer/vendor/bin"
+    - PATH="$PATH:$HOME/.composer/vendor/bin"
+    - DRUPAL_TRAVIS_TEST_GROUP=update_helper,update_helper_checklist
 
 before_install:
-- composer global require thunder/travis @beta
+  - composer global require thunder/travis @beta
 
 script:
-- test-drupal-module
+  - test-drupal-module
 
 notifications:
   email: false
