@@ -3,7 +3,7 @@
 namespace Drupal\update_helper\Generator;
 
 use Drupal\Console\Core\Generator\Generator;
-use Drupal\Console\Extension\Manager;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 
 /**
  * Update hook generator for generate:configuration:update console command.
@@ -13,22 +13,20 @@ use Drupal\Console\Extension\Manager;
 class ConfigurationUpdateHookGenerator extends Generator {
 
   /**
-   * Extension manager.
+   * Module handler service.
    *
-   * @var \Drupal\Console\Extension\Manager
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
-  protected $extensionManager;
+  protected $moduleHandler;
 
   /**
    * AuthenticationProviderGenerator constructor.
    *
-   * @param \Drupal\Console\Extension\Manager $extension_manager
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   Extension manager.
    */
-  public function __construct(
-    Manager $extension_manager
-  ) {
-    $this->extensionManager = $extension_manager;
+  public function __construct(ModuleHandlerInterface $module_handler) {
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -57,7 +55,7 @@ class ConfigurationUpdateHookGenerator extends Generator {
    *   Description displayed for update hook function.
    */
   public function generate($module, $update_number, $description = '') {
-    $module_path = $this->extensionManager->getModule($module)->getPath();
+    $module_path = $this->moduleHandler->getModule($module)->getPath();
     $update_file = $module_path . '/' . $module . '.install';
 
     $this->addSkeletonDir(__DIR__ . '/../../templates/console');

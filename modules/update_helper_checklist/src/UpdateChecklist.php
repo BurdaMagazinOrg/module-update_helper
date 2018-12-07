@@ -250,8 +250,9 @@ class UpdateChecklist {
       }
     }
 
+    $all_items = $update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items");
     $update_check_list
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items")))
+      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', empty($all_items) ? 0 : count($all_items))
       ->save();
   }
 

@@ -3,7 +3,7 @@
 namespace Drupal\update_helper_checklist\Generator;
 
 use Drupal\Console\Core\Generator\Generator;
-use Drupal\Console\Extension\Manager;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\update_helper_checklist\UpdateChecklist;
 
 /**
@@ -14,11 +14,11 @@ use Drupal\update_helper_checklist\UpdateChecklist;
 class ConfigurationUpdateGenerator extends Generator {
 
   /**
-   * Extension manager.
+   * Module handler service.
    *
-   * @var \Drupal\Console\Extension\Manager
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
-  protected $extensionManager;
+  protected $moduleHandler;
 
   /**
    * Update checklist service.
@@ -30,13 +30,13 @@ class ConfigurationUpdateGenerator extends Generator {
   /**
    * AuthenticationProviderGenerator constructor.
    *
-   * @param \Drupal\Console\Extension\Manager $extension_manager
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   Extension manager.
    * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
    *   Update checklist service.
    */
-  public function __construct(Manager $extension_manager, UpdateChecklist $update_checklist) {
-    $this->extensionManager = $extension_manager;
+  public function __construct(ModuleHandlerInterface $module_handler, UpdateChecklist $update_checklist) {
+    $this->moduleHandler = $module_handler;
     $this->updateChecklist = $update_checklist;
   }
 
@@ -72,7 +72,7 @@ class ConfigurationUpdateGenerator extends Generator {
    *   Checklist failed message.
    */
   public function generate($module, $update_number, $update_version, $description, $success_message, $failure_message) {
-    $module_path = $this->extensionManager->getModule($module)->getPath();
+    $module_path = $this->moduleHandler->getModule($module)->getPath();
     $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
     $update_versions = $this->updateChecklist->getUpdateVersions($module);
     end($update_versions);
