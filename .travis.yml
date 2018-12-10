@@ -1,137 +1,31 @@
-# @file
-# .travis.yml - Drupal for Travis CI Integration
-#
-# Template provided by https://github.com/LionsAd/drupal_ti.
-
 language: php
+sudo: required
+
 cache:
   apt: true
   directories:
   - "$HOME/.composer/cache"
   - "$HOME/.drush/cache"
-  - "$HOME/travis-phantomjs"
-
-sudo: false
+  - "$HOME/.npm"
 
 php:
-  - 7.1
+  - 7.2
   - 5.6
 
-addons:
-  apt:
-    packages:
-      - nodejs
 branches:
   only:
-    - master
-    - /^8\.([0-9]+|x)\-[0-9]+\.([0-9]+|x)$/
+  - /^8\.([0-9]+|x)\-[0-9]+\.([0-9]+|x)$/
 
 env:
   global:
-    # add composer's global bin directory to the path
-    # see: https://github.com/drush-ops/drush#install---composer
     - PATH="$PATH:$HOME/.composer/vendor/bin"
-
-    # Configuration variables.
-    - DRUPAL_TI_MODULE_NAME="update_helper"
-    - DRUPAL_TI_SIMPLETEST_GROUP="update_helper,update_helper_checklist"
-
-    # Define runners and environment vars to include before and after the
-    # main runners / environment vars.
-    #- DRUPAL_TI_SCRIPT_DIR_BEFORE="./drupal_ti/before"
-    #- DRUPAL_TI_SCRIPT_DIR_AFTER="./drupal_ti/after"
-
-    # The environment to use, supported are: drupal-7, drupal-8
-    - DRUPAL_TI_ENVIRONMENT="drupal-8"
-    - DRUPAL_TI_CORE_BRANCH="8.5.x"
-
-    # The installation profile to use:
-    #- DRUPAL_TI_INSTALL_PROFILE="testing"
-
-    # Drupal specific variables.
-    - DRUPAL_TI_DB="drupal_travis_db"
-    - DRUPAL_TI_DB_URL="mysql://root:@127.0.0.1/drupal_travis_db"
-    # Note: Do not add a trailing slash here.
-    - DRUPAL_TI_WEBSERVER_URL="http://127.0.0.1"
-    - DRUPAL_TI_WEBSERVER_PORT="8080"
-
-    # Simpletest specific commandline arguments, the DRUPAL_TI_SIMPLETEST_GROUP is appended at the end.
-    - DRUPAL_TI_SIMPLETEST_ARGS="--verbose --color --concurrency 4 --url $DRUPAL_TI_WEBSERVER_URL:$DRUPAL_TI_WEBSERVER_PORT"
-
-    # === Behat specific variables.
-    # This is relative to $TRAVIS_BUILD_DIR
-    - DRUPAL_TI_BEHAT_DIR="./tests/behat"
-    # These arguments are passed to the bin/behat command.
-    - DRUPAL_TI_BEHAT_ARGS=""
-    # Specify the filename of the behat.yml with the $DRUPAL_TI_DRUPAL_DIR variables.
-    - DRUPAL_TI_BEHAT_YML="behat.yml.dist"
-    # This is used to setup Xvfb.
-    - DRUPAL_TI_BEHAT_SCREENSIZE_COLOR="1280x1024x16"
-    # The version of selenium that should be used.
-    - DRUPAL_TI_BEHAT_SELENIUM_VERSION="2.48.2"
-    # Set DRUPAL_TI_BEHAT_DRIVER to "selenium" to use "firefox" or "chrome" here.
-    - DRUPAL_TI_BEHAT_DRIVER="phantomjs"
-    - DRUPAL_TI_BEHAT_BROWSER="firefox"
-
-    # PHPUnit specific commandline arguments.
-    - DRUPAL_TI_PHPUNIT_ARGS="--verbose --debug"
-    # Specifying the phpunit-core src/ directory is useful when e.g. a vendor/
-    # directory is present in the module directory, which phpunit would then
-    # try to find tests in. This option is relative to $TRAVIS_BUILD_DIR.
-    #- DRUPAL_TI_PHPUNIT_CORE_SRC_DIRECTORY="./tests/src"
-
-    # Code coverage via coveralls.io
-    - DRUPAL_TI_COVERAGE="satooshi/php-coveralls:0.6.*"
-    # This needs to match your .coveralls.yml file.
-    - DRUPAL_TI_COVERAGE_FILE="build/logs/clover.xml"
-
-    # Debug options
-    #- DRUPAL_TI_DEBUG="-x -v"
-    # Set to "all" to output all files, set to e.g. "xvfb selenium" or "selenium",
-    # etc. to only output those channels.
-    #- DRUPAL_TI_DEBUG_FILE_OUTPUT="selenium xvfb webserver"
-
-  matrix:
-    # [[[ SELECT ANY OR MORE OPTIONS ]]]
-    #- DRUPAL_TI_RUNNERS="phpunit"
-    #- DRUPAL_TI_RUNNERS="simpletest"
-    #- DRUPAL_TI_RUNNERS="behat"
-    #- DRUPAL_TI_RUNNERS="phpunit simpletest behat"
-    # Use phpunit-core to test modules with phpunit with Drupal 8 core.
-    - DRUPAL_TI_RUNNERS="phpunit-core"
-
-mysql:
-  database: drupal_travis_db
-  username: root
-  encoding: utf8
+    - DRUPAL_TRAVIS_TEST_JAVASCRIPT=false
 
 before_install:
-  - composer self-update
-
-  # Code Checks
-  - bash -x -e ./scripts/travis/test-source-code.sh
-
-  # Continue with Drupal Tests
-  - cd ./tests
-  - composer global require "lionsad/drupal_ti:1.*"
-  - drupal-ti before_install
-  - cd ..
-
-install:
-  - drupal-ti install
-  - if [ ! -f $HOME/travis-phantomjs/phantomjs-1.9.8-linux-x86_64/bin/phantomjs ]; then rm -rf $HOME/travis-phantomjs; mkdir -p $HOME/travis-phantomjs; wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 -O $HOME/travis-phantomjs/phantomjs-1.9.8-linux-x86_64.tar.bz2; tar -xvf $HOME/travis-phantomjs/phantomjs-1.9.8-linux-x86_64.tar.bz2 -C $HOME/travis-phantomjs; fi
-  - export PATH=$HOME/travis-phantomjs/phantomjs-1.9.8-linux-x86_64/bin/:$PATH
-
-before_script:
-  - drupal-ti before_script
-  - phantomjs --ssl-protocol=any --ignore-ssl-errors=true ../drupal-8/drupal/vendor/jcalderonzumba/gastonjs/src/Client/main.js 8510 1024 768 2>&1 >> /dev/null &
-  - nc -zvv localhost 8510; out=$?; while [[ $out -ne 0 ]]; do echo "Retry hit port 8510..."; nc -zvv localhost 8510; out=$?; sleep 1; done
+  - composer global require thunder/travis
 
 script:
-  - drupal-ti script
-
-after_script:
-  - drupal-ti after_script
+  - test-drupal-module
 
 notifications:
   email: false
