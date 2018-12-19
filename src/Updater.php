@@ -88,6 +88,13 @@ class Updater implements UpdaterInterface {
   }
 
   /**
+   * State of last update execution.
+   *
+   * @var bool
+   */
+  protected $successfulExecute = FALSE;
+
+  /**
    * {@inheritdoc}
    */
   public function logger() {
@@ -97,71 +104,59 @@ class Updater implements UpdaterInterface {
   /**
    * {@inheritdoc}
    */
-  public function installModules(array $modules) {
-    $successful = TRUE;
-
-    foreach ($modules as $module) {
-      try {
-        if ($this->moduleInstaller->install([$module])) {
-          $this->logger->info($this->t('Module @module is successfully enabled.', ['@module' => $module]));
-        }
-        else {
-          $this->logger->warning($this->t('Unable to enable @module.', ['@module' => $module]));
-          $successful = FALSE;
-        }
-      }
-      catch (MissingDependencyException $e) {
-        $this->logger->warning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
-        $successful = FALSE;
-      }
-    }
-
-    return $successful;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function importConfigs(array $config_list) {
-    $successful = TRUE;
-
-    // Import configurations.
-    foreach ($config_list as $full_config_name) {
-      try {
-        $config_name = ConfigName::createByFullName($full_config_name);
-
-        if (!$this->configReverter->import($config_name->getType(), $config_name->getName())) {
-          throw new \Exception('Config not found');
-        }
-        $this->logger->info($this->t('Configuration @full_name has been successfully imported.', [
-          '@full_name' => $full_config_name,
-        ]));
-      }
-      catch (\Exception $e) {
-        $successful = FALSE;
-
-        $this->logger->warning($this->t('Unable to import @full_name config.', [
-          '@full_name' => $full_config_name,
-        ]));
-      }
-    }
-
-    return $successful;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function executeUpdate($module, $update_definition_name) {
-    $successful = TRUE;
+    $this->successfulExecute = TRUE;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
+    if (isset($update_definitions['__global_actions'])) {
+      $this->executeGlobalActions($update_definitions['__global_actions']);
+
+      unset($update_definitions['__global_actions']);
+    }
+
+    if (!empty($update_definitions)) {
+      $this->executeConfigurationActions($update_definitions);
+    }
+
+    // Dispatch event after update has finished.
+    $event = new ConfigurationUpdateEvent($module, $update_definition_name, $this->successfulExecute);
+    $this->eventDispatcher->dispatch(UpdateHelperEvents::CONFIGURATION_UPDATE, $event);
+
+    return $this->successfulExecute;
+  }
+
+  /**
+   * Get array with defined global actions.
+   *
+   * Global actions can be:
+   * - install_modules: list of modules to install
+   * - import_configs: list of configurations to import.
+   *
+   * @param array $global_actions
+   *   Array with list of global actions.
+   */
+  protected function executeGlobalActions(array $global_actions) {
+    if (isset($global_actions['install_modules'])) {
+      $this->installModules($global_actions['install_modules']);
+    }
+
+    if (isset($global_actions['import_configs'])) {
+      $this->importConfigs($global_actions['import_configs']);
+    }
+  }
+
+  /**
+   * Execute configuration update definitions for configurations.
+   *
+   * @param array $update_definitions
+   *   List of configurations with update definitions for them.
+   */
+  protected function executeConfigurationActions(array $update_definitions) {
     foreach ($update_definitions as $configName => $configChange) {
-      $expected_config = $configChange['expected_config'];
       $update_actions = $configChange['update_actions'];
 
-      // Define configuration keys that should be deleted.
       $delete_keys = [];
+      // Define configuration keys that should be deleted.
       if (isset($update_actions['delete'])) {
         $delete_keys = $this->getFlatKeys($update_actions['delete']);
       }
@@ -177,20 +172,64 @@ class Updater implements UpdaterInterface {
         $new_config = NestedArray::mergeDeep($new_config, $update_actions['add']);
       }
 
-      if ($this->updateConfig($configName, $new_config, $expected_config, $delete_keys)) {
+      if ($this->updateConfig($configName, $new_config, $configChange['expected_config'], $delete_keys)) {
         $this->logger->info($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
       }
       else {
-        $successful = FALSE;
+        $this->successfulExecute = FALSE;
         $this->logger->warning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
       }
     }
+  }
 
-    // Dispatch event after update has finished.
-    $event = new ConfigurationUpdateEvent($module, $update_definition_name, $successful);
-    $this->eventDispatcher->dispatch(UpdateHelperEvents::CONFIGURATION_UPDATE, $event);
+  /**
+   * Installs modules.
+   *
+   * @param array $modules
+   *   List of module names.
+   */
+  protected function installModules(array $modules) {
+    foreach ($modules as $module) {
+      try {
+        if ($this->moduleInstaller->install([$module])) {
+          $this->logger->info($this->t('Module @module is successfully enabled.', ['@module' => $module]));
+        }
+        else {
+          $this->logger->warning($this->t('Unable to enable @module.', ['@module' => $module]));
+          $this->successfulExecute = FALSE;
+        }
+      }
+      catch (MissingDependencyException $e) {
+        $this->logger->warning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
+        $this->successfulExecute = FALSE;
+      }
+    }
+  }
 
-    return $successful;
+  /**
+   * Imports configurations.
+   *
+   * @param array $config_list
+   *   List of full configuration names.
+   */
+  protected function importConfigs(array $config_list) {
+    // Import configurations.
+    foreach ($config_list as $full_config_name) {
+      $config_name = ConfigName::createByFullName($full_config_name);
+
+      if (!$this->configReverter->import($config_name->getType(), $config_name->getName())) {
+        $this->logger->warning($this->t('Unable to import @full_name config, because configuration file is not found.', [
+          '@full_name' => $full_config_name,
+        ]));
+        $this->successfulExecute = FALSE;
+
+        continue;
+      }
+
+      $this->logger->info($this->t('Configuration @full_name has been successfully imported.', [
+        '@full_name' => $full_config_name,
+      ]));
+    }
   }
 
   /**

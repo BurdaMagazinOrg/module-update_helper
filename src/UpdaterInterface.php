@@ -16,25 +16,6 @@ interface UpdaterInterface {
   public function logger();
 
   /**
-   * Installs modules and works with logger.
-   *
-   * @param array $modules
-   *   List of module names.
-   */
-  public function installModules(array $modules);
-
-  /**
-   * List of full configuration names to import.
-   *
-   * @param array $config_list
-   *   List of configurations.
-   *
-   * @return bool
-   *   Returns if import was successful.
-   */
-  public function importConfigs(array $config_list);
-
-  /**
    * Execute update of configuration from update definitions.
    *
    * @param string $module

@@ -20,6 +20,7 @@ class UpdaterTest extends KernelTestBase {
   protected static $modules = [
     'config_update',
     'update_helper',
+    'system',
     'user',
     'text',
     'field',
@@ -34,6 +35,11 @@ class UpdaterTest extends KernelTestBase {
    */
   protected function getUpdateDefinition() {
     return [
+      '__global_actions' => [
+        'install_modules' => [
+          'tour',
+        ],
+      ],
       'field.storage.node.body' => [
         'expected_config' => [
           'lost_config' => 'text',
@@ -67,39 +73,44 @@ class UpdaterTest extends KernelTestBase {
    * @covers \Drupal\update_helper\Updater::executeUpdate
    */
   public function testExecuteUpdate() {
-    /** @var \Drupal\config_update\ConfigRevertInterface $configReverter */
-    $configReverter = \Drupal::service('config_update.config_update');
-    $configReverter->import('field_storage_config', 'node.body');
+    /** @var \Drupal\config_update\ConfigRevertInterface $config_reverter */
+    $config_reverter = \Drupal::service('config_update.config_update');
+    $config_reverter->import('field_storage_config', 'node.body');
 
-    /** @var \Drupal\Core\Config\ConfigFactory $configFactory */
-    $configFactory = \Drupal::service('config.factory');
-    $config = $configFactory->getEditable('field.storage.node.body');
+    /** @var \Drupal\Core\Config\ConfigFactory $config_factory */
+    $config_factory = \Drupal::service('config.factory');
+    $config = $config_factory->getEditable('field.storage.node.body');
 
-    $expectedConfigData = $config->get();
+    $expected_config_data = $config->get();
 
-    $configData = $config->get();
-    $configData['status'] = FALSE;
-    $configData['type'] = 'text';
-    unset($configData['cardinality']);
-    $configData['settings'] = ['max_length' => 123];
-    $configData['lost_config'] = 'text';
+    $config_data = $config->get();
+    $config_data['status'] = FALSE;
+    $config_data['type'] = 'text';
+    unset($config_data['cardinality']);
+    $config_data['settings'] = ['max_length' => 123];
+    $config_data['lost_config'] = 'text';
 
-    $config->setData($configData)->save(TRUE);
+    $config->setData($config_data)->save(TRUE);
 
-    /** @var \Drupal\update_helper\Updater $updateHelper */
-    $updateHelper = \Drupal::service('update_helper.updater');
+    /** @var \Drupal\update_helper\Updater $update_helper */
+    $update_helper = \Drupal::service('update_helper.updater');
 
-    /** @var \Drupal\update_helper\ConfigHandler $configHandler */
-    $configHandler = \Drupal::service('update_helper.config_handler');
-    $patch_file_path = $configHandler->getPatchFile('update_helper', 'test_updater', TRUE);
+    /** @var \Drupal\update_helper\ConfigHandler $config_handler */
+    $config_handler = \Drupal::service('update_helper.config_handler');
+    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater', TRUE);
 
-    /** @var \Drupal\Core\Serialization\Yaml $ymlSerializer */
-    $ymlSerializer = \Drupal::service('serialization.yaml');
-    file_put_contents($patch_file_path, $ymlSerializer->encode($this->getUpdateDefinition()));
+    /** @var \Drupal\Core\Serialization\Yaml $yml_serializer */
+    $yml_serializer = \Drupal::service('serialization.yaml');
+    file_put_contents($patch_file_path, $yml_serializer->encode($this->getUpdateDefinition()));
 
-    $updateHelper->executeUpdate('update_helper', 'test_updater');
+    /** @var \Drupal\Core\Extension\ModuleHandlerInterface $module_handler */
+    $module_handler = \Drupal::moduleHandler();
+    $this->assertFalse($module_handler->moduleExists('tour'), 'Module "tour" should not be installed.');
 
-    $this->assertEquals($expectedConfigData, $configFactory->get('field.storage.node.body')->get());
+    $update_helper->executeUpdate('update_helper', 'test_updater');
+
+    $this->assertEquals($expected_config_data, $config_factory->get('field.storage.node.body')->get());
+    $this->assertTrue($module_handler->moduleExists('tour'), 'Module "tour" should be installed.');
   }
 
 }
