@@ -26,11 +26,11 @@ class ConfigurationUpdateEvent extends Event {
   protected $updateName;
 
   /**
-   * Status if update has executed successfully.
+   * Count of warnings occurred during update execution.
    *
-   * @var bool
+   * @var int
    */
-  protected $successful;
+  protected $warningCount;
 
   /**
    * Configuration update event.
@@ -39,13 +39,13 @@ class ConfigurationUpdateEvent extends Event {
    *   Module name.
    * @param string $updateName
    *   Update name.
-   * @param bool $successful
-   *   Is update finished successfully or not.
+   * @param int $warningCount
+   *   Count of warnings occurred during update execution.
    */
-  public function __construct($module, $updateName, $successful) {
+  public function __construct($module, $updateName, $warningCount) {
     $this->module = $module;
     $this->updateName = $updateName;
-    $this->successful = $successful;
+    $this->warningCount = $warningCount;
   }
 
   /**
@@ -75,7 +75,7 @@ class ConfigurationUpdateEvent extends Event {
    *   Returns status for configuration update.
    */
   public function isSuccessful() {
-    return $this->successful;
+    return $this->warningCount !== 0;
   }
 
 }

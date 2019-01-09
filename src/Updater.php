@@ -88,11 +88,11 @@ class Updater implements UpdaterInterface {
   }
 
   /**
-   * State of last update execution.
+   * Keeps the record of total warnings occurred during update execution.
    *
-   * @var bool
+   * @var int
    */
-  protected $successfulExecute = FALSE;
+  protected $warningCount = 0;
 
   /**
    * {@inheritdoc}
@@ -105,7 +105,7 @@ class Updater implements UpdaterInterface {
    * {@inheritdoc}
    */
   public function executeUpdate($module, $update_definition_name) {
-    $this->successfulExecute = TRUE;
+    $this->warningCount = 0;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
     if (isset($update_definitions['__global_actions'])) {
@@ -119,10 +119,10 @@ class Updater implements UpdaterInterface {
     }
 
     // Dispatch event after update has finished.
-    $event = new ConfigurationUpdateEvent($module, $update_definition_name, $this->successfulExecute);
+    $event = new ConfigurationUpdateEvent($module, $update_definition_name, $this->warningCount);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::CONFIGURATION_UPDATE, $event);
 
-    return $this->successfulExecute;
+    return $this->warningCount !== 0;
   }
 
   /**
@@ -176,10 +176,21 @@ class Updater implements UpdaterInterface {
         $this->logger->info($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
       }
       else {
-        $this->successfulExecute = FALSE;
-        $this->logger->warning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
+        $this->registerWarning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
       }
     }
+  }
+
+  /**
+   * Register warning with logging.
+   *
+   * @param string $message
+   *   The message used for logging of warning.
+   */
+  protected function registerWarning($message) {
+    $this->warningCount++;
+
+    $this->logger->warning($message);
   }
 
   /**
@@ -195,13 +206,11 @@ class Updater implements UpdaterInterface {
           $this->logger->info($this->t('Module @module is successfully enabled.', ['@module' => $module]));
         }
         else {
-          $this->logger->warning($this->t('Unable to enable @module.', ['@module' => $module]));
-          $this->successfulExecute = FALSE;
+          $this->registerWarning($this->t('Unable to enable @module.', ['@module' => $module]));
         }
       }
       catch (MissingDependencyException $e) {
-        $this->logger->warning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
-        $this->successfulExecute = FALSE;
+        $this->registerWarning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
       }
     }
   }
@@ -218,10 +227,9 @@ class Updater implements UpdaterInterface {
       $config_name = ConfigName::createByFullName($full_config_name);
 
       if (!$this->configReverter->import($config_name->getType(), $config_name->getName())) {
-        $this->logger->warning($this->t('Unable to import @full_name config, because configuration file is not found.', [
+        $this->registerWarning($this->t('Unable to import @full_name config, because configuration file is not found.', [
           '@full_name' => $full_config_name,
         ]));
-        $this->successfulExecute = FALSE;
 
         continue;
       }
