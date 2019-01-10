@@ -75,7 +75,7 @@ class ConfigurationUpdateEvent extends Event {
    *   Returns status for configuration update.
    */
   public function isSuccessful() {
-    return $this->warningCount !== 0;
+    return $this->warningCount === 0;
   }
 
 }

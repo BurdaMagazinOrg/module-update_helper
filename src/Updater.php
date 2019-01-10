@@ -122,7 +122,7 @@ class Updater implements UpdaterInterface {
     $event = new ConfigurationUpdateEvent($module, $update_definition_name, $this->warningCount);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::CONFIGURATION_UPDATE, $event);
 
-    return $this->warningCount !== 0;
+    return $this->warningCount === 0;
   }
 
   /**
