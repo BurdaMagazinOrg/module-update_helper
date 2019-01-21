@@ -51,6 +51,10 @@ class Updater implements UpdaterInterface {
   /**
    * Logger service.
    *
+   * Note: Instead of using this service directly, use provided wrappers for it:
+   * - logWarning - for logging warnings, it will mark executed update as failed
+   * - logInfo    - for logging information.
+   *
    * @var \Drupal\update_helper\UpdateLogger
    */
   protected $logger;
@@ -102,16 +106,38 @@ class Updater implements UpdaterInterface {
   }
 
   /**
+   * Log warning message with internal count for reporting update failures.
+   *
+   * @param string $message
+   *   The message used for logging of warning.
+   */
+  protected function logWarning($message) {
+    $this->warningCount++;
+
+    $this->logger->warning($message);
+  }
+
+  /**
+   * Log information message, that will be displayed on update execution.
+   *
+   * @param string $message
+   *   The message used for logging of info.
+   */
+  protected function logInfo($message) {
+    $this->logger->info($message);
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function executeUpdate($module, $update_definition_name) {
     $this->warningCount = 0;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
-    if (isset($update_definitions['__global_actions'])) {
-      $this->executeGlobalActions($update_definitions['__global_actions']);
+    if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
+      $this->executeGlobalActions($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
 
-      unset($update_definitions['__global_actions']);
+      unset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
     }
 
     if (!empty($update_definitions)) {
@@ -136,12 +162,12 @@ class Updater implements UpdaterInterface {
    *   Array with list of global actions.
    */
   protected function executeGlobalActions(array $global_actions) {
-    if (isset($global_actions['install_modules'])) {
-      $this->installModules($global_actions['install_modules']);
+    if (isset($global_actions[UpdateDefinitionInterface::GLOBAL_ACTION_INSTALL_MODULES])) {
+      $this->installModules($global_actions[UpdateDefinitionInterface::GLOBAL_ACTION_INSTALL_MODULES]);
     }
 
-    if (isset($global_actions['import_configs'])) {
-      $this->importConfigs($global_actions['import_configs']);
+    if (isset($global_actions[UpdateDefinitionInterface::GLOBAL_ACTION_IMPORT_CONFIGS])) {
+      $this->importConfigs($global_actions[UpdateDefinitionInterface::GLOBAL_ACTION_IMPORT_CONFIGS]);
     }
   }
 
@@ -173,24 +199,12 @@ class Updater implements UpdaterInterface {
       }
 
       if ($this->updateConfig($configName, $new_config, $configChange['expected_config'], $delete_keys)) {
-        $this->logger->info($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
+        $this->logInfo($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
       }
       else {
-        $this->registerWarning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
+        $this->logWarning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
       }
     }
-  }
-
-  /**
-   * Register warning with logging.
-   *
-   * @param string $message
-   *   The message used for logging of warning.
-   */
-  protected function registerWarning($message) {
-    $this->warningCount++;
-
-    $this->logger->warning($message);
   }
 
   /**
@@ -203,14 +217,14 @@ class Updater implements UpdaterInterface {
     foreach ($modules as $module) {
       try {
         if ($this->moduleInstaller->install([$module])) {
-          $this->logger->info($this->t('Module @module is successfully enabled.', ['@module' => $module]));
+          $this->logInfo($this->t('Module @module is successfully enabled.', ['@module' => $module]));
         }
         else {
-          $this->registerWarning($this->t('Unable to enable @module.', ['@module' => $module]));
+          $this->logWarning($this->t('Unable to enable @module.', ['@module' => $module]));
         }
       }
       catch (MissingDependencyException $e) {
-        $this->registerWarning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
+        $this->logWarning($this->t('Unable to enable @module because of missing dependencies.', ['@module' => $module]));
       }
     }
   }
@@ -227,14 +241,14 @@ class Updater implements UpdaterInterface {
       $config_name = ConfigName::createByFullName($full_config_name);
 
       if (!$this->configReverter->import($config_name->getType(), $config_name->getName())) {
-        $this->registerWarning($this->t('Unable to import @full_name config, because configuration file is not found.', [
+        $this->logWarning($this->t('Unable to import @full_name config, because configuration file is not found.', [
           '@full_name' => $full_config_name,
         ]));
 
         continue;
       }
 
-      $this->logger->info($this->t('Configuration @full_name has been successfully imported.', [
+      $this->logInfo($this->t('Configuration @full_name has been successfully imported.', [
         '@full_name' => $full_config_name,
       ]));
     }
