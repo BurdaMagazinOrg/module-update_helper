@@ -240,6 +240,14 @@ class Updater implements UpdaterInterface {
     foreach ($config_list as $full_config_name) {
       $config_name = ConfigName::createByFullName($full_config_name);
 
+      if (!empty($this->configFactory->get($full_config_name)->getRawData())) {
+        $this->logWarning($this->t('Importing of @full_name config will be skipped, because configuration already exists.', [
+          '@full_name' => $full_config_name,
+        ]));
+
+        continue;
+      }
+
       if (!$this->configReverter->import($config_name->getType(), $config_name->getName())) {
         $this->logWarning($this->t('Unable to import @full_name config, because configuration file is not found.', [
           '@full_name' => $full_config_name,
