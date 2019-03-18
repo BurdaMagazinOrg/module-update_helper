@@ -26,7 +26,7 @@ before_install:
   - composer global require thunder/travis:dev-feature/php-stan
 
 script:
-  - test-drupal-module
+  - test-drupal-project
 
 notifications:
   email: false
