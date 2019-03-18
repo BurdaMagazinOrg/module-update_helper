@@ -22,7 +22,7 @@ env:
     - DRUPAL_TRAVIS_TEST_JAVASCRIPT=false
 
 before_install:
-  - composer global require thunder/travis
+  - composer global require thunder/travis:dev-test/deprecations
 
 script:
   - test-drupal-module
