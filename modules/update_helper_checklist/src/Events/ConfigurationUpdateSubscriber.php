@@ -47,6 +47,8 @@ class ConfigurationUpdateSubscriber implements EventSubscriberInterface {
    *
    * @param \Drupal\update_helper\Events\ConfigurationUpdateEvent $event
    *   Configuration update event.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function onConfigurationUpdate(ConfigurationUpdateEvent $event) {
     if ($event->isSuccessful()) {

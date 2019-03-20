@@ -86,27 +86,35 @@ class UpdateChecklist {
   /**
    * Marks a list of updates as successful.
    *
-   * @param array $names
+   * @param array $module_updates
    *   Array of update ids per module.
    * @param bool $checkListPoints
    *   Indicates the corresponding checkbox should be checked.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  public function markUpdatesSuccessful(array $names, $checkListPoints = TRUE) {
-    $this->setSuccessfulByHook($names, TRUE);
+  public function markUpdatesSuccessful(array $module_updates, $checkListPoints = TRUE) {
+    $update_ids = $this->getFlatChecklistKeys($module_updates);
+
+    $this->setSuccessfulByHook($update_ids, TRUE);
 
     if ($checkListPoints) {
-      $this->checkListPoints($names);
+      $this->checkListPoints($update_ids);
     }
   }
 
   /**
    * Marks a list of updates as failed.
    *
-   * @param array $names
+   * @param array $module_updates
    *   Array of update ids per module.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  public function markUpdatesFailed(array $names) {
-    $this->setSuccessfulByHook($names, FALSE);
+  public function markUpdatesFailed(array $module_updates) {
+    $update_ids = $this->getFlatChecklistKeys($module_updates);
+
+    $this->setSuccessfulByHook($update_ids, FALSE);
   }
 
   /**
@@ -114,40 +122,43 @@ class UpdateChecklist {
    *
    * @param bool $status
    *   Checkboxes enabled or disabled.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function markAllUpdates($status = TRUE) {
-    $keys = [];
+    $update_ids = [];
     foreach ($this->getChecklist()->items as $version_items) {
       foreach ($version_items as $key => $item) {
         if (is_array($item)) {
-          $keys[] = $key;
+          $update_ids[] = $key;
         }
       }
     }
 
-    $this->setSuccessfulByHook($keys, $status);
+    $this->setSuccessfulByHook($update_ids, $status);
     $this->checkAllListPoints($status);
   }
 
   /**
    * Set status for update keys.
    *
-   * @param array $module_update_list
-   *   Keys for update entries per module.
+   * @param array $update_ids
+   *   Keys for update entries.
    * @param bool $status
    *   Status that should be set.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function setSuccessfulByHook(array $module_update_list, $status = TRUE) {
-    $checklist_keys = $this->getFlatChecklistKeys($module_update_list);
-
-    foreach ($checklist_keys as $update_key) {
-      if ($update = Update::load($update_key)) {
-        $update->setSuccessfulByHook($status)->save();
+  protected function setSuccessfulByHook(array $update_ids, $status = TRUE) {
+    foreach ($update_ids as $update_id) {
+      if ($update = Update::load($update_id)) {
+        $update->setSuccessfulByHook($status);
+        $update->save();
       }
       else {
         Update::create(
           [
-            'id' => $update_key,
+            'id' => $update_id,
             'successful_by_hook' => $status,
           ]
         )->save();
@@ -164,7 +175,7 @@ class UpdateChecklist {
    * @return array
    *   Returns flattened array of checklist update entries.
    */
-  public function getFlatChecklistKeys(array $module_update_list) {
+  protected function getFlatChecklistKeys(array $module_update_list) {
     $flatKeys = [];
 
     foreach ($module_update_list as $module_name => $updates) {
@@ -179,10 +190,10 @@ class UpdateChecklist {
   /**
    * Checks an array of bulletpoints on a checklist.
    *
-   * @param array $module_update_list
+   * @param array $update_ids
    *   Array of the bulletpoints.
    */
-  protected function checkListPoints(array $module_update_list) {
+  protected function checkListPoints(array $update_ids) {
     /** @var \Drupal\Core\Config\Config $update_check_list */
     $update_check_list = $this->configFactory
       ->getEditable('checklistapi.progress.update_helper_checklist');
@@ -190,11 +201,10 @@ class UpdateChecklist {
     $user = $this->account->id();
     $time = time();
 
-    $checklist_keys = $this->getFlatChecklistKeys($module_update_list);
-    foreach ($checklist_keys as $name) {
-      if ($update_check_list && !$update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$name")) {
+    foreach ($update_ids as $update_id) {
+      if ($update_check_list && !$update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id")) {
         $update_check_list
-          ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$name", [
+          ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id", [
             '#completed' => time(),
             '#uid' => $user,
           ]);
@@ -250,8 +260,9 @@ class UpdateChecklist {
       }
     }
 
+    $check_list_items = $update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items");
     $update_check_list
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items")))
+      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', empty($check_list_items) ? 0 : count($check_list_items))
       ->save();
   }
 
