@@ -14,6 +14,11 @@ use Drupal\update_helper_checklist\UpdateChecklist;
 use Symfony\Component\Yaml\Yaml;
 use Drupal\update_helper_checklist\Entity\Update;
 
+const CONFIG_NOT_FOUND = 0;
+const CONFIG_ALREADY_APPLIED = 1;
+const CONFIG_NOT_EXPECTED = 2;
+const CONFIG_APPLIED_SUCCESSFULLY = 3;
+
 /**
  * Implements hook_checklistapi_checklist_info().
  */
@@ -62,10 +67,10 @@ function _update_helper_checklist_checklistapi_checklist_items() {
           $entry = Update::load($update_key);
 
           $status = ($entry && $entry->wasSuccessfulByHook()) ? TRUE : FALSE;
-          if ($status && !empty($update['#description_successful'])) {
+          if ($entry && $status && !empty($update['#description_successful'])) {
             $update['#description'] .= $update['#description_successful'];
           }
-          elseif (!$status && !empty($update['#description_failed'])) {
+          elseif ($entry && !$status && !empty($update['#description_failed'])) {
             $update['#description'] .= $update['#description_failed'];
           }
         }
@@ -107,6 +112,7 @@ function _update_helper_checklist_checklistapi_checklist_items() {
 function update_helper_checklist_modules_installed(array $modules) {
   /** @var \Drupal\Core\Extension\ModuleHandler $module_handler */
   $module_handler = \Drupal::service('module_handler');
+  $updateHelper = \Drupal::service('update_helper.updater');
 
   $modules_checklist = [];
   $module_directories = $module_handler->getModuleDirectories();
@@ -120,6 +126,10 @@ function update_helper_checklist_modules_installed(array $modules) {
     foreach ($updates_checklist as $version_items) {
       foreach ($version_items as $update_hook_name => $checklist_definition) {
         if (is_array($checklist_definition)) {
+
+          $status = $updateHelper->checkUpdate($module_name, $update_hook_name);
+          if ($status != CONFIG_ALREADY_APPLIED && $status != CONFIG_APPLIED_SUCCESSFULLY) continue;
+
           if (!isset($modules_checklist[$module_name])) {
             $modules_checklist[$module_name] = [];
           }

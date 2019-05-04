@@ -20,6 +20,11 @@ class Updater implements UpdaterInterface {
 
   use StringTranslationTrait;
 
+  const CONFIG_NOT_FOUND = 0;
+  const CONFIG_ALREADY_APPLIED = 1;
+  const CONFIG_NOT_EXPECTED = 2;
+  const CONFIG_APPLIED_SUCCESSFULLY = 3;
+
   /**
    * Site configFactory object.
    *
@@ -130,7 +135,7 @@ class Updater implements UpdaterInterface {
   /**
    * {@inheritdoc}
    */
-  public function executeUpdate($module, $update_definition_name) {
+  public function executeUpdate($module, $update_definition_name, $force = FALSE) {
     $this->warningCount = 0;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
@@ -141,7 +146,7 @@ class Updater implements UpdaterInterface {
     }
 
     if (!empty($update_definitions)) {
-      $this->executeConfigurationActions($update_definitions);
+      $this->executeConfigurationActions($update_definitions, $force);
     }
 
     // Dispatch event after update has finished.
@@ -149,6 +154,29 @@ class Updater implements UpdaterInterface {
     $this->eventDispatcher->dispatch(UpdateHelperEvents::CONFIGURATION_UPDATE, $event);
 
     return $this->warningCount === 0;
+  }
+
+  /**
+   * Check update status of configuration from update definitions.
+   *
+   * @param string $module
+   *   Module name where update definition is saved.
+   * @param string $update_definition_name
+   *   Update definition name. Usually same name as update hook.
+   *
+   * @return bool
+   *   Returns update status.
+   */
+  public function checkUpdate($module, $update_definition_name) {
+    $this->warningCount = 0;
+
+    $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
+
+    if (!empty($update_definitions)) {
+      return $this->executeConfigurationActions($update_definitions, FALSE, TRUE);
+    }
+
+    return Updater::CONFIG_NOT_FOUND;
   }
 
   /**
@@ -176,8 +204,15 @@ class Updater implements UpdaterInterface {
    *
    * @param array $update_definitions
    *   List of configurations with update definitions for them.
+   * @param bool $force
+   *   Force the update.
+   * @param bool $checkOnly
+   *   Check the update status and don't apply the update.
+   *
+   * @return bool
+   *   Returns update status if checkOnly flag is set.
    */
-  protected function executeConfigurationActions(array $update_definitions) {
+  protected function executeConfigurationActions(array $update_definitions, $force = FALSE, $checkOnly = FALSE) {
     foreach ($update_definitions as $configName => $configChange) {
       $update_actions = $configChange['update_actions'];
 
@@ -198,14 +233,32 @@ class Updater implements UpdaterInterface {
         $new_config = NestedArray::mergeDeep($new_config, $update_actions['add']);
       }
 
-      if ($this->updateConfig($configName, $new_config, $configChange['expected_config'], $delete_keys)) {
-        $this->logInfo($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
+      $result = $this->updateConfig($configName, $new_config, $configChange['expected_config'], $delete_keys, $force, $checkOnly);
+
+      if ($checkOnly) {
+        return $result;
       }
-      else {
-        $this->logWarning($this->t('Unable to update configuration for @configName.', ['@configName' => $configName]));
+
+      switch ($result) {
+        case Updater::CONFIG_APPLIED_SUCCESSFULLY:
+          $this->logInfo($this->t('Configuration @configName has been successfully updated.', ['@configName' => $configName]));
+          break;
+
+        case Updater::CONFIG_ALREADY_APPLIED:
+          $this->logWarning($this->t('Configuration @configName is already updated.', ['@configName' => $configName]));
+          break;
+
+        case Updater::CONFIG_NOT_EXPECTED:
+          $this->logWarning($this->t('Expected current configuration is modefied, Unable to apply new config @configName.', ['@configName' => $configName]));
+          break;
+
+        case Updater::CONFIG_NOT_FOUND:
+          $this->logWarning($this->t('Unable to find config @configName. Skipping update.', ['@configName' => $configName]));
+          break;
       }
     }
   }
+
 
   /**
    * Installs modules.
@@ -321,41 +374,54 @@ class Updater implements UpdaterInterface {
    *   Only if current config is same like old config we are updating.
    * @param array $delete_keys
    *   List of parent keys to remove. @see NestedArray::unsetValue()
+   * @param bool $force
+   *   Force the update.
+   * @param bool $checkOnly
+   *   Check the update status and don't apply the update.
    *
    * @return bool
    *   Returns TRUE if update of configuration was successful.
    */
-  protected function updateConfig($config_name, array $configuration, array $expected_configuration = [], array $delete_keys = []) {
+  protected function updateConfig($config_name, array $configuration, array $expected_configuration = [], array $delete_keys = [], $force = FALSE, $checkOnly = FALSE) {
     $config = $this->configFactory->getEditable($config_name);
 
     $config_data = $config->get();
 
+    // Reset expected_config in case of force flag.
+    if ($force) {
+      $expected_configuration = [];
+    }
+
     // Check that configuration exists before executing update.
     if (empty($config_data)) {
-      return FALSE;
+      return Updater::CONFIG_NOT_FOUND;
     }
 
     // Check if configuration is already in new state.
     $merged_data = NestedArray::mergeDeep($expected_configuration, $configuration);
-    if (empty(DiffArray::diffAssocRecursive($merged_data, $config_data))) {
-      return TRUE;
+    if (!$force && empty(DiffArray::diffAssocRecursive($merged_data, $config_data))) {
+      return Updater::CONFIG_ALREADY_APPLIED;
     }
 
-    if (!empty($expected_configuration) && DiffArray::diffAssocRecursive($expected_configuration, $config_data)) {
-      return FALSE;
-    }
-
-    // Delete configuration keys from config.
-    if (!empty($delete_keys)) {
-      foreach ($delete_keys as $key_path) {
-        NestedArray::unsetValue($config_data, $key_path);
+    if (empty($expected_configuration) || !DiffArray::diffAssocRecursive($expected_configuration, $config_data)) {
+      // Delete configuration keys from config.
+      if($checkOnly){
+        return Updater::CONFIG_APPLIED_SUCCESSFULLY;
       }
+
+      if (!empty($delete_keys)) {
+        foreach ($delete_keys as $key_path) {
+          NestedArray::unsetValue($config_data, $key_path);
+        }
+      }
+
+      $config->setData(NestedArray::mergeDeep($config_data, $configuration));
+      $config->save();
+
+      return Updater::CONFIG_APPLIED_SUCCESSFULLY;
+    }else{
+      return Updater::CONFIG_NOT_EXPECTED;
     }
-
-    $config->setData(NestedArray::mergeDeep($config_data, $configuration));
-    $config->save();
-
-    return TRUE;
   }
 
 }
