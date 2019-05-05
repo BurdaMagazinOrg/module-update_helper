@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\update_helper\Commands;
+namespace Drupal\update_helper\Command;
 
 use Drush\Commands\DrushCommands;
 use Drupal\update_helper\Utility\CommandHelper;
@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
  *
  * define drush commands for update_helper module
  *
- * @package Drupal\update_helper\Commands
+ * @package Drupal\update_helper\Command
  */
 class ApplyConfigurationUpdateCommands extends DrushCommands {
 
@@ -23,7 +23,7 @@ class ApplyConfigurationUpdateCommands extends DrushCommands {
   protected $commandHelper;
 
   /**
-   * VarbaseUpdateHelperCommands constructor.
+   * ApplyConfigurationUpdateCommands constructor.
    */
   public function __construct() {
     $this->commandHelper = new CommandHelper();

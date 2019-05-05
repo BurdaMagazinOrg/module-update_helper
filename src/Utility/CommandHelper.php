@@ -22,12 +22,12 @@ class CommandHelper implements LoggerAwareInterface {
    */
   public function apply_update($module = '', $update_hook = '', $force = FALSE) {
     if (!$update_hook || !$module) {
-      $this->logger->info(dt('Please provide a module name and an update hook. Example: drush varbase-up <module> <update_hook>'));
+      $this->logger->error(dt('Please provide a module name and an update hook. Example: drush uhau <module> <update_hook>'));
       return;
     }
 
     $updateHelper = \Drupal::service('update_helper.updater');
-    $updateHelper->executeUpdate($module, $updateName, $force);
+    $updateHelper->executeUpdate($module, $update_hook, $force);
     return $updateHelper->logger()->output();
   }
 
