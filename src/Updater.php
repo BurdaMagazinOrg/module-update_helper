@@ -249,7 +249,7 @@ class Updater implements UpdaterInterface {
           break;
 
         case Updater::CONFIG_NOT_EXPECTED:
-          $this->logWarning($this->t('Expected current configuration is modefied, Unable to apply new config @configName.', ['@configName' => $configName]));
+        $this->logWarning($this->t('Expected current configuration for @configName is not matching. Unable to apply new config.', ['@configName' => $configName]));
           break;
 
         case Updater::CONFIG_NOT_FOUND:
