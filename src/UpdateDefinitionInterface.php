@@ -22,6 +22,11 @@ interface UpdateDefinitionInterface {
   const GLOBAL_ACTION_INSTALL_MODULES = 'install_modules';
 
   /**
+   * Global action key for expected modules.
+   */
+  const GLOBAL_ACTION_EXPECTED_MODULES = 'expected_modules';
+
+  /**
    * Global action key for importing configurations.
    */
   const GLOBAL_ACTION_IMPORT_CONFIGS = 'import_configs';
