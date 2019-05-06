@@ -171,7 +171,9 @@ class Updater implements UpdaterInterface {
     $this->warningCount = 0;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
-
+    if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
+      unset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
+    }
     if (!empty($update_definitions)) {
       return $this->executeConfigurationActions($update_definitions, FALSE, TRUE);
     }
