@@ -13,11 +13,7 @@ use Drupal\Core\Url;
 use Drupal\update_helper_checklist\UpdateChecklist;
 use Symfony\Component\Yaml\Yaml;
 use Drupal\update_helper_checklist\Entity\Update;
-
-const CONFIG_NOT_FOUND = 0;
-const CONFIG_ALREADY_APPLIED = 1;
-const CONFIG_NOT_EXPECTED = 2;
-const CONFIG_APPLIED_SUCCESSFULLY = 3;
+use Drupal\update_helper\Updater;
 
 /**
  * Implements hook_checklistapi_checklist_info().
@@ -128,7 +124,7 @@ function update_helper_checklist_modules_installed(array $modules) {
         if (is_array($checklist_definition)) {
 
           $status = $updateHelper->checkUpdate($module_name, $update_hook_name);
-          if ($status != CONFIG_ALREADY_APPLIED && $status != CONFIG_APPLIED_SUCCESSFULLY) continue;
+          if ($status != Updater::CONFIG_ALREADY_APPLIED && $status != Updater::CONFIG_APPLIED_SUCCESSFULLY) continue;
 
           if (!isset($modules_checklist[$module_name])) {
             $modules_checklist[$module_name] = [];
