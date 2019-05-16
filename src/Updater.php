@@ -134,13 +134,19 @@ class Updater implements UpdaterInterface {
     $this->warningCount = 0;
 
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
-    if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
-      if(isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_EXPECTED_MODULES])){
-        $result = $this->checkExpectedModulesArray($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_EXPECTED_MODULES]);
+
+    if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_CONDITIONS])) {
+      if(isset($update_definitions[UpdateDefinitionInterface::GLOBAL_CONDITIONS][UpdateDefinitionInterface::GLOBAL_CONDITION_EXPECTED_MODULES])){
+        $result = $this->checkExpectedModulesArray($update_definitions[UpdateDefinitionInterface::GLOBAL_CONDITIONS][UpdateDefinitionInterface::GLOBAL_CONDITION_EXPECTED_MODULES]);
         if(!empty($result)){
           return $this->logWarning($this->t('The following module(s) "@neededModules" are required for update @updateName.', ['@neededModules' => implode(", ", $result), '@updateName' => $update_definition_name]));
         }
       }
+      unset($update_definitions[UpdateDefinitionInterface::GLOBAL_CONDITIONS]);
+    }
+
+
+    if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
       $this->executeGlobalActions($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
 
       unset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
