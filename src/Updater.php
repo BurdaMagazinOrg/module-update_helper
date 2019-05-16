@@ -24,7 +24,8 @@ class Updater implements UpdaterInterface {
   const CONFIG_ALREADY_APPLIED = 1;
   const CONFIG_NOT_EXPECTED = 2;
   const CONFIG_APPLIED_SUCCESSFULLY = 3;
-
+  const MODULES_FOUND = 4;
+  const MODULES_NOT_FOUND = 5;
   /**
    * Site configFactory object.
    *
@@ -169,11 +170,20 @@ class Updater implements UpdaterInterface {
    */
   public function checkUpdate($module, $update_definition_name) {
     $this->warningCount = 0;
-
+    $moduleHandler = \Drupal::service('module_handler');
+    $modulesInstalled = [];
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
     if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
+      if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_INSTALL_MODULES])) {
+        $modules = $update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_INSTALL_MODULES];
+        foreach ($modules as $module) {
+          if (!$moduleHandler->moduleExists($module)) return Updater::MODULES_NOT_FOUND;
+          $modulesInstalled[] = $module;
+        }
+      }
       unset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS]);
     }
+    
     if (!empty($update_definitions)) {
       return $this->executeConfigurationActions($update_definitions, FALSE, TRUE);
     }
@@ -401,7 +411,7 @@ class Updater implements UpdaterInterface {
 
     // Check if configuration is already in new state.
     $merged_data = NestedArray::mergeDeep($expected_configuration, $configuration);
-    if (!$force && empty(DiffArray::diffAssocRecursive($merged_data, $config_data))) {
+    if (!$force && empty(DiffArray::diffAssocRecursive($configuration, $config_data))) {
       return Updater::CONFIG_ALREADY_APPLIED;
     }
 
