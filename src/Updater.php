@@ -188,6 +188,10 @@ class Updater implements UpdaterInterface {
       return $this->executeConfigurationActions($update_definitions, FALSE, TRUE);
     }
 
+    if (empty($update_definitions) && !empty($modulesInstalled)) {
+      return Updater::MODULES_FOUND;
+    }
+
     return Updater::CONFIG_NOT_FOUND;
   }
 
