@@ -197,8 +197,8 @@ class Updater implements UpdaterInterface {
   public function checkExpectedModules($module, $update_definition_name) {
     $update_definitions = $this->configHandler->loadUpdate($module, $update_definition_name);
     if (isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS])) {
-      if(isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_EXPECTED_MODULES])){
-        return $this->checkExpectedModulesArray($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_ACTION_EXPECTED_MODULES]);
+      if(isset($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_CONDITION_EXPECTED_MODULES])){
+        return $this->checkExpectedModulesArray($update_definitions[UpdateDefinitionInterface::GLOBAL_ACTIONS][UpdateDefinitionInterface::GLOBAL_CONDITION_EXPECTED_MODULES]);
       }
     }
     return [];
