@@ -17,6 +17,11 @@ use Drupal\update_helper_checklist\Entity\Update;
  */
 class UpdateChecklistTest extends KernelTestBase {
 
+  /**
+   * Modules to enable for test.
+   *
+   * @var array
+   */
   protected static $modules = [
     'system',
     'user',
