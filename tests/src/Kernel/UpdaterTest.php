@@ -36,6 +36,11 @@ class UpdaterTest extends KernelTestBase {
     'field.storage.node.body',
   ];
 
+  /**
+   * Modules to enable for test.
+   *
+   * @var array
+   */
   protected static $modules = [
     'config_update',
     'update_helper',
