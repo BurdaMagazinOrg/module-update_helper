@@ -2,9 +2,9 @@
 
 namespace Drupal\Tests\update_helper_checklist\Kernel;
 
-use Drupal\checklistapi\ChecklistapiChecklist;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\update_helper_checklist\Entity\Update;
+use Drupal\update_helper_checklist\UpdateChecklist;
 
 /**
  * @covers \Drupal\update_helper_checklist\UpdateChecklist
@@ -89,7 +89,7 @@ class UpdateChecklistTest extends KernelTestBase {
     /** @var \Drupal\Core\Config\Config $update_check_list */
     $update_check_list = $this->container->get('config.factory')->getEditable('checklistapi.progress.update_helper_checklist');
     foreach ($expected_all_saved_ids as $update_id) {
-      $this->assertNotEmpty($update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id"));
+      $this->assertNotEmpty($update_check_list->get(UpdateChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id"));
     }
   }
 

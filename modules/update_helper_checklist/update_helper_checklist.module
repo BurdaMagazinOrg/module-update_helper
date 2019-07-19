@@ -154,8 +154,10 @@ function update_helper_checklist_toolbar() {
     ],
   ];
 
-  \Drupal::service('renderer')
-    ->addCacheableDependency($items['update_helper_checklist'], $checklist->config);
+  \Drupal::service('renderer')->addCacheableDependency(
+    $items['update_helper_checklist'],
+    \Drupal::configFactory()->get("checklistapi.progress.{$checklist->id}")
+  );
 
   if ($checklist->getPercentComplete() != 100 && $user->hasPermission('view update_helper_checklist checklistapi checklist')) {
     $items['update_helper_checklist'] += [

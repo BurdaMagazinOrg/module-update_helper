@@ -2,7 +2,6 @@
 
 namespace Drupal\update_helper_checklist;
 
-use Drupal\checklistapi\ChecklistapiChecklist;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -17,6 +16,11 @@ use Symfony\Component\Yaml\Yaml;
  * @package Drupal\update_helper_checklist
  */
 class UpdateChecklist {
+
+  /**
+   * The configuration key for saved progress.
+   */
+  const PROGRESS_CONFIG_KEY = 'progress';
 
   /**
    * Update checklist file for configuration updates.
@@ -202,9 +206,9 @@ class UpdateChecklist {
     $time = time();
 
     foreach ($update_ids as $update_id) {
-      if ($update_check_list && !$update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id")) {
+      if ($update_check_list && !$update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items.$update_id")) {
         $update_check_list
-          ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$update_id", [
+          ->set(static::PROGRESS_CONFIG_KEY . ".#items.$update_id", [
             '#completed' => time(),
             '#uid' => $user,
           ]);
@@ -212,9 +216,9 @@ class UpdateChecklist {
     }
 
     $update_check_list
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items")))
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#changed', $time)
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#changed_by', $user)
+      ->set(static::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items")))
+      ->set(static::PROGRESS_CONFIG_KEY . '.#changed', $time)
+      ->set(static::PROGRESS_CONFIG_KEY . '.#changed_by', $user)
       ->save();
   }
 
@@ -233,8 +237,8 @@ class UpdateChecklist {
     $time = time();
 
     $update_check_list
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#changed', $time)
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#changed_by', $user);
+      ->set(static::PROGRESS_CONFIG_KEY . '.#changed', $time)
+      ->set(static::PROGRESS_CONFIG_KEY . '.#changed_by', $user);
 
     $exclude = [
       '#title',
@@ -247,22 +251,22 @@ class UpdateChecklist {
         if (!in_array($item_name, $exclude)) {
           if ($status) {
             $update_check_list
-              ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$item_name", [
+              ->set(static::PROGRESS_CONFIG_KEY . ".#items.$item_name", [
                 '#completed' => $time,
                 '#uid' => $user,
               ]);
           }
           else {
             $update_check_list
-              ->clear(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items.$item_name");
+              ->clear(static::PROGRESS_CONFIG_KEY . ".#items.$item_name");
           }
         }
       }
     }
 
-    $check_list_items = $update_check_list->get(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . ".#items");
+    $check_list_items = $update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items");
     $update_check_list
-      ->set(ChecklistapiChecklist::PROGRESS_CONFIG_KEY . '.#completed_items', empty($check_list_items) ? 0 : count($check_list_items))
+      ->set(static::PROGRESS_CONFIG_KEY . '.#completed_items', empty($check_list_items) ? 0 : count($check_list_items))
       ->save();
   }
 
