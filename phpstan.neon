@@ -12,6 +12,8 @@ parameters:
     - '#Call to deprecated function entity_get_form_display().#'
     #TODO: Remove when https://www.drupal.org/project/drupal/issues/2869573 is fixed.
     - '#Call to deprecated method prepareLegacyRequest\(\) of class Drupal\\Core\\DrupalKernel.#'
+    #TODO: Remove when Drush 8 support is dropped.
+    - '#Call to deprecated function drush_log().#'
 includes:
   - ./vendor/mglaman/phpstan-drupal/extension.neon
   - ./vendor/phpstan/phpstan-deprecation-rules/rules.neon
