@@ -2,7 +2,7 @@
 
 namespace Drupal\update_helper_checklist;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\checklistapi\Storage\StateStorage;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\update_helper_checklist\Entity\Update;
@@ -18,11 +18,6 @@ use Symfony\Component\Yaml\Yaml;
 class UpdateChecklist {
 
   /**
-   * The configuration key for saved progress.
-   */
-  const PROGRESS_CONFIG_KEY = 'progress';
-
-  /**
    * Update checklist file for configuration updates.
    *
    * @var string
@@ -30,11 +25,11 @@ class UpdateChecklist {
   public static $updateChecklistFileName = 'updates_checklist.yml';
 
   /**
-   * Site configFactory object.
+   * Site checklist state storage service.
    *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   * @var \Drupal\checklistapi\Storage\StateStorage
    */
-  protected $configFactory;
+  protected $checkListStateStorage;
 
   /**
    * Module installer service.
@@ -60,15 +55,15 @@ class UpdateChecklist {
   /**
    * Update checklist constructor.
    *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   * @param \Drupal\checklistapi\Storage\StateStorage $stateStorage
    *   Config factory service.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
    *   Module handler service.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The current user.
    */
-  public function __construct(ConfigFactoryInterface $configFactory, ModuleHandlerInterface $moduleHandler, AccountInterface $account) {
-    $this->configFactory = $configFactory;
+  public function __construct(StateStorage $stateStorage, ModuleHandlerInterface $moduleHandler, AccountInterface $account) {
+    $this->checkListStateStorage = $stateStorage;
     $this->moduleHandler = $moduleHandler;
     $this->account = $account;
   }
@@ -198,28 +193,25 @@ class UpdateChecklist {
    *   Array of the bulletpoints.
    */
   protected function checkListPoints(array $update_ids) {
-    /** @var \Drupal\Core\Config\Config $update_check_list */
-    $update_check_list = $this->configFactory
-      ->getEditable('checklistapi.progress.update_helper_checklist');
+    $current_progress = $this->checkListStateStorage->setChecklistId('update_helper_checklist')->getSavedProgress();
 
     $user = $this->account->id();
     $time = time();
 
     foreach ($update_ids as $update_id) {
-      if ($update_check_list && !$update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items.$update_id")) {
-        $update_check_list
-          ->set(static::PROGRESS_CONFIG_KEY . ".#items.$update_id", [
-            '#completed' => time(),
-            '#uid' => $user,
-          ]);
+      if (empty($current_progress['#items'][$update_id])) {
+        $current_progress['#items'][$update_id] = [
+          '#completed' => time(),
+          '#uid' => $user,
+        ];
       }
     }
 
-    $update_check_list
-      ->set(static::PROGRESS_CONFIG_KEY . '.#completed_items', count($update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items")))
-      ->set(static::PROGRESS_CONFIG_KEY . '.#changed', $time)
-      ->set(static::PROGRESS_CONFIG_KEY . '.#changed_by', $user)
-      ->save();
+    $current_progress['#completed_items'] = count($current_progress['#items']);
+    $current_progress['#changed'] = $time;
+    $current_progress['#changed_by'] = $user;
+
+    $this->checkListStateStorage->setChecklistId('update_helper_checklist')->setSavedProgress($current_progress);
   }
 
   /**
@@ -229,16 +221,13 @@ class UpdateChecklist {
    *   Checkboxes enabled or disabled.
    */
   protected function checkAllListPoints($status = TRUE) {
-    /** @var \Drupal\Core\Config\Config $update_check_list */
-    $update_check_list = $this->configFactory
-      ->getEditable('checklistapi.progress.update_helper_checklist');
+    $current_progress = $this->checkListStateStorage->setChecklistId('update_helper_checklist')->getSavedProgress();
 
     $user = $this->account->id();
     $time = time();
 
-    $update_check_list
-      ->set(static::PROGRESS_CONFIG_KEY . '.#changed', $time)
-      ->set(static::PROGRESS_CONFIG_KEY . '.#changed_by', $user);
+    $current_progress['#changed'] = $time;
+    $current_progress['#changed_by'] = $user;
 
     $exclude = [
       '#title',
@@ -250,24 +239,21 @@ class UpdateChecklist {
       foreach ($version_items as $item_name => $item) {
         if (!in_array($item_name, $exclude)) {
           if ($status) {
-            $update_check_list
-              ->set(static::PROGRESS_CONFIG_KEY . ".#items.$item_name", [
-                '#completed' => $time,
-                '#uid' => $user,
-              ]);
+            $current_progress['#items'][$item_name] = [
+              '#completed' => $time,
+              '#uid' => $user,
+            ];
           }
           else {
-            $update_check_list
-              ->clear(static::PROGRESS_CONFIG_KEY . ".#items.$item_name");
+            unset($current_progress['#items'][$item_name]);
           }
         }
       }
     }
 
-    $check_list_items = $update_check_list->get(static::PROGRESS_CONFIG_KEY . ".#items");
-    $update_check_list
-      ->set(static::PROGRESS_CONFIG_KEY . '.#completed_items', empty($check_list_items) ? 0 : count($check_list_items))
-      ->save();
+    $current_progress['#completed_items'] = empty($current_progress['#items']) ? 0 : count($current_progress['#items']);
+
+    $this->checkListStateStorage->setChecklistId('update_helper_checklist')->setSavedProgress($current_progress);
   }
 
   /**
