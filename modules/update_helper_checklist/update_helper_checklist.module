@@ -25,6 +25,7 @@ function update_helper_checklist_checklistapi_checklist_info() {
     '#path' => '/admin/config/development/update-helper',
     '#description' => t('Provides steps to keep your site up to date.'),
     '#callback' => '_update_helper_checklist_checklistapi_checklist_items',
+    '#storage' => 'state',
   ];
 
   return $definitions;
@@ -154,9 +155,12 @@ function update_helper_checklist_toolbar() {
     ],
   ];
 
+  /** @var \Drupal\checklistapi\Storage\StateStorage $state_storage */
+  $state_storage = \Drupal::service('checklistapi_storage.state');
+
   \Drupal::service('renderer')->addCacheableDependency(
     $items['update_helper_checklist'],
-    \Drupal::configFactory()->get("checklistapi.progress.{$checklist->id}")
+    $state_storage->setChecklistId($checklist->id)->getSavedProgress()
   );
 
   if ($checklist->getPercentComplete() != 100 && $user->hasPermission('view update_helper_checklist checklistapi checklist')) {

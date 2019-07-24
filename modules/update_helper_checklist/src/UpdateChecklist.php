@@ -56,7 +56,7 @@ class UpdateChecklist {
    * Update checklist constructor.
    *
    * @param \Drupal\checklistapi\Storage\StateStorage $stateStorage
-   *   Config factory service.
+   *   The check list state storage service.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
    *   Module handler service.
    * @param \Drupal\Core\Session\AccountInterface $account
