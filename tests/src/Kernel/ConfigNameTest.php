@@ -14,6 +14,11 @@ use Drupal\update_helper\ConfigName;
  */
 class ConfigNameTest extends KernelTestBase {
 
+  /**
+   * Modules to enable for test.
+   *
+   * @var array
+   */
   protected static $modules = ['views', 'field'];
 
   /**

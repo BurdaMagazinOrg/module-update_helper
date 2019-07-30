@@ -13,6 +13,11 @@ use Drupal\KernelTests\KernelTestBase;
  */
 class ReversibleConfigDifferTest extends KernelTestBase {
 
+  /**
+   * Modules to enable for test.
+   *
+   * @var array
+   */
   protected static $modules = ['config_update', 'update_helper', 'user'];
 
   /**

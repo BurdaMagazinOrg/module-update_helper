@@ -149,7 +149,7 @@ function update_helper_checklist_toolbar() {
   // We are varying our cache by path and by permission.
   $items['update_helper_checklist'] = [
     '#cache' => [
-      'keys' => ['toolbar'],
+      'keys' => ['toolbar', 'updater_helper'],
       'contexts' => ['user.permissions'],
     ],
   ];

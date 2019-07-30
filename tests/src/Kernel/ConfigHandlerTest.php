@@ -13,10 +13,20 @@ use Drupal\KernelTests\KernelTestBase;
  */
 class ConfigHandlerTest extends KernelTestBase {
 
+  /**
+   * An array of config object names that are excluded from schema checking.
+   *
+   * @var string[]
+   */
   protected static $configSchemaCheckerExclusions = [
     'field.storage.node.body',
   ];
 
+  /**
+   * Modules to enable for test.
+   *
+   * @var array
+   */
   protected static $modules = [
     'config_update',
     'update_helper',
