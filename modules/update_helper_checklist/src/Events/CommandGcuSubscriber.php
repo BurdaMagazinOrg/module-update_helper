@@ -25,6 +25,13 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   protected static $updateVersionName = 'update-version';
 
   /**
+   * Key for update description.
+   *
+   * @var string
+   */
+  protected static $updateDescription = 'update-description';
+
+  /**
    * Key for success message command option.
    *
    * @var string
@@ -113,6 +120,14 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     );
 
     $configure_event->addOption(
+      static::$updateDescription,
+      NULL,
+      InputOption::VALUE_REQUIRED,
+      $configure_event->getCommand()
+        ->trans('commands.generate.configuration.update.checklist.options.update-description')
+    );
+
+    $configure_event->addOption(
       static::$successMessageName,
       NULL,
       InputOption::VALUE_REQUIRED,
@@ -143,6 +158,7 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     $output = $interact_event->getOutput();
 
     $update_version = $input->getOption(static::$updateVersionName);
+    $update_description = $input->getOption(static::$updateDescription);
     $success_message = $input->getOption(static::$successMessageName);
     $failure_message = $input->getOption(static::$failureMessageName);
 
@@ -157,6 +173,15 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
         (empty($update_versions)) ? '8.x-1.0' : current($update_versions)
       );
       $input->setOption(static::$updateVersionName, $update_version);
+    }
+
+    // Get update description for checklist.
+    if (!$update_description) {
+      $update_description = $output->ask(
+        $command->trans('commands.generate.configuration.update.checklist.questions.update-description'),
+        $command->trans('commands.generate.configuration.update.checklist.defaults.update-description')
+      );
+      $input->setOption(static::$updateDescription, $update_description);
     }
 
     // Get success message for checklist.
@@ -199,6 +224,7 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
       $execute_event->getUpdateNumber(),
       $options[static::$updateVersionName],
       $options['description'],
+      $options[static::$updateDescription],
       $options[static::$successMessageName],
       $options[static::$failureMessageName]
     );
