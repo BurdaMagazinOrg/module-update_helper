@@ -66,12 +66,14 @@ class ConfigurationUpdateGenerator extends Generator {
    *   Update version for module.
    * @param string $description
    *   Checklist entry title.
+   * @param string $update_description
+   *   Checklist update description.
    * @param string $success_message
    *   Checklist success message.
    * @param string $failure_message
    *   Checklist failed message.
    */
-  public function generate($module, $update_number, $update_version, $description, $success_message, $failure_message) {
+  public function generate($module, $update_number, $update_version, $description, $update_description, $success_message, $failure_message) {
     $module_path = $this->moduleHandler->getModule($module)->getPath();
     $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
     $update_versions = $this->updateChecklist->getUpdateVersions($module);
@@ -82,6 +84,7 @@ class ConfigurationUpdateGenerator extends Generator {
       'update_hook_name' => $module . '_update_' . $update_number,
       'file_exists' => file_exists($checklist_file),
       'checklist_title' => $description,
+      'checklist_description' => $update_description,
       'checklist_success' => $success_message,
       'checklist_failed' => $failure_message,
       'update_version' => ($update_version === $last_update_version) ? '' : $update_version,
