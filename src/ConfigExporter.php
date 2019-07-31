@@ -55,6 +55,8 @@ class ConfigExporter {
   /**
    * Export configuration.
    *
+   * TODO: It would be good to log that file has been changed!!!
+   *
    * @param \Drupal\update_helper\ConfigName $config_name
    *   Config name.
    * @param array $data
@@ -64,21 +66,17 @@ class ConfigExporter {
    *   Returns if configuration is stored.
    */
   public function exportConfiguration(ConfigName $config_name, array $data) {
-    $full_name = $config_name->getFullName();
+    $config_full_name = $config_name->getFullName();
 
-    // Read the config from the file.
-    $value = $this->extensionConfigStorage->read($full_name);
-    if ($value) {
-      $full_file_path = $this->extensionConfigStorage->getFilePath($full_name);
+    // Check if file with provided config name exists in install or optional
+    // config and update it accordingly.
+    foreach ([$this->extensionConfigStorage, $this->extensionOptionalConfigStorage] as $config_storage) {
+      $file_data = $config_storage->read($config_full_name);
+      if ($file_data) {
+        $full_file_path = $config_storage->getFilePath($config_full_name);
 
-      return file_put_contents($full_file_path, $this->serializer->encode($data)) !== FALSE;
-    }
-
-    $value = $this->extensionOptionalConfigStorage->read($full_name);
-    if ($value) {
-      $this->extensionOptionalConfigStorage->write($full_name, $data);
-
-      return TRUE;
+        return file_put_contents($full_file_path, $this->serializer->encode($data)) !== FALSE;
+      }
     }
 
     return FALSE;
