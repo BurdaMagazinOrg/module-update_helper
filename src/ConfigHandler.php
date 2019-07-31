@@ -147,7 +147,11 @@ class ConfigHandler {
       }
     }
 
-    $this->exportConfigurations(array_keys($update_patch));
+    // We don't want to export configuration files in case we are making update
+    // front active configuration to configuration provided in files.
+    if (!$from_active) {
+      $this->exportConfigurations(array_keys($update_patch));
+    }
 
     return $update_patch ? $this->serializer->encode($update_patch) : FALSE;
   }
