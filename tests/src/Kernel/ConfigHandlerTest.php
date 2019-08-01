@@ -138,6 +138,11 @@ class ConfigHandlerTest extends KernelTestBase {
     $data = $configHandler->generatePatchFile(['node'], TRUE);
 
     $this->assertEquals($this->getUpdateDefinition(), $data);
+
+    // Check that configuration file is not changed.
+    /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
+    $extensionStorage = \Drupal::service('config_update.extension_storage');
+    $this->assertEqual(sha1_file($this->configFileBackup), sha1_file($extensionStorage->getFilePath('field.storage.node.body')));
   }
 
   /**
