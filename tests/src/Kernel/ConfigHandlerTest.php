@@ -64,6 +64,28 @@ class ConfigHandlerTest extends KernelTestBase {
   }
 
   /**
+   * Backup of configuration file that is modified during testing.
+   *
+   * @var string
+   */
+  protected $configFileBackup;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+
+    $this->configFileBackup = tempnam(sys_get_temp_dir(), 'update_helper_test_');
+
+    /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
+    $extensionStorage = \Drupal::service('config_update.extension_storage');
+    $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
+
+    $this->assertEqual(TRUE, copy($configFilePath, $this->configFileBackup));
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function tearDown() {
@@ -79,13 +101,20 @@ class ConfigHandlerTest extends KernelTestBase {
       rmdir($dirName);
     }
 
+    /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
+    $extensionStorage = \Drupal::service('config_update.extension_storage');
+    $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
+
+    $this->assertEqual(TRUE, copy($this->configFileBackup, $configFilePath));
+    unlink($this->configFileBackup);
+
     parent::tearDown();
   }
 
   /**
    * @covers \Drupal\update_helper\ConfigHandler::generatePatchFile
    */
-  public function testGeneratePatchFile() {
+  public function testGeneratePatchFileFromActiveConfig() {
     /** @var \Drupal\update_helper\ConfigHandler $configHandler */
     $configHandler = \Drupal::service('update_helper.config_handler');
 
@@ -109,6 +138,61 @@ class ConfigHandlerTest extends KernelTestBase {
     $data = $configHandler->generatePatchFile(['node'], TRUE);
 
     $this->assertEquals($this->getUpdateDefinition(), $data);
+  }
+
+  /**
+   * @covers \Drupal\update_helper\ConfigHandler::generatePatchFile
+   */
+  public function testGeneratePatchFileWithConfigExport() {
+    /** @var \Drupal\update_helper\ConfigHandler $configHandler */
+    $configHandler = \Drupal::service('update_helper.config_handler');
+
+    /** @var \Drupal\Component\Serialization\SerializationInterface $yamlSerializer */
+    $yamlSerializer = \Drupal::service('serialization.yaml');
+
+    /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
+    $extensionStorage = \Drupal::service('config_update.extension_storage');
+    $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
+
+    /** @var \Drupal\config_update\ConfigRevertInterface $configReverter */
+    $configReverter = \Drupal::service('config_update.config_update');
+    $configReverter->import('field_storage_config', 'node.body');
+
+    /** @var \Drupal\Core\Config\ConfigFactory $configFactory */
+    $configFactory = \Drupal::service('config.factory');
+    $config = $configFactory->getEditable('field.storage.node.body');
+    $configData = $config->get();
+
+    $configData['type'] = 'text';
+    $configData['settings'] = ['max_length' => 321];
+    $config->setData($configData)->save(TRUE);
+
+    // Check file configuration before export.
+    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+    $this->assertEqual('text_with_summary', $fileData['type']);
+    $this->assertEqual([], $fileData['settings']);
+
+    // Generate patch and export config after configuration change.
+    $data = $configHandler->generatePatchFile(['node'], FALSE);
+
+    $this->assertEqual(
+      'field.storage.node.body:' . PHP_EOL .
+      '  expected_config:' . PHP_EOL .
+      '    settings: {  }' . PHP_EOL .
+      '    type: text_with_summary' . PHP_EOL .
+      '  update_actions:' . PHP_EOL .
+      '    change:' . PHP_EOL .
+      '      settings:' . PHP_EOL .
+      '        max_length: 321' . PHP_EOL .
+      '      type: text' . PHP_EOL,
+      $data
+    );
+
+    // Check newly exported configuration.
+    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+
+    $this->assertEqual('text', $fileData['type']);
+    $this->assertEqual(['max_length' => 321], $fileData['settings']);
   }
 
 }
