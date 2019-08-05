@@ -63,6 +63,13 @@ class ConfigHandler {
   protected $serializer;
 
   /**
+   * Configuration exporter.
+   *
+   * @var \Drupal\update_helper\ConfigExporter
+   */
+  protected $configExporter;
+
+  /**
    * List of configuration parameters that will be stripped out.
    *
    * @var array
@@ -91,14 +98,17 @@ class ConfigHandler {
    *   Module handler service.
    * @param \Drupal\Component\Serialization\SerializationInterface $yaml_serializer
    *   Array serializer service.
+   * @param \Drupal\update_helper\ConfigExporter $config_exporter
+   *   Configuration exporter service.
    */
-  public function __construct(ConfigListInterface $config_list, ConfigRevertInterface $config_reverter, ConfigDiffInterface $config_differ, ConfigDiffTransformer $config_diff_transformer, ModuleHandlerInterface $module_handler, SerializationInterface $yaml_serializer) {
+  public function __construct(ConfigListInterface $config_list, ConfigRevertInterface $config_reverter, ConfigDiffInterface $config_differ, ConfigDiffTransformer $config_diff_transformer, ModuleHandlerInterface $module_handler, SerializationInterface $yaml_serializer, ConfigExporter $config_exporter) {
     $this->configList = $config_list;
     $this->configReverter = $config_reverter;
     $this->configDiffer = $config_differ;
     $this->configDiffTransformer = $config_diff_transformer;
     $this->moduleHandler = $module_handler;
     $this->serializer = $yaml_serializer;
+    $this->configExporter = $config_exporter;
   }
 
   /**
@@ -109,11 +119,13 @@ class ConfigHandler {
    *
    * @param string[] $module_names
    *   Module name that will be used to generate patch for it.
+   * @param bool $from_active
+   *   Flag if configuration should be updated from active to Yml file configs.
    *
    * @return string|bool
    *   Rendering generated patch file name or FALSE if patch is empty.
    */
-  public function generatePatchFile(array $module_names = []) {
+  public function generatePatchFile(array $module_names, $from_active) {
     $update_patch = [];
 
     foreach ($module_names as $module_name) {
@@ -124,7 +136,7 @@ class ConfigHandler {
 
       $config_names = $this->getConfigNames(array_intersect($module_config_names, $configuration_lists[0]));
       foreach ($config_names as $config_name) {
-        $config_diff = $this->getConfigDiff($config_name);
+        $config_diff = $this->getConfigDiff($config_name, $from_active);
         $config_diff = $this->filterDiff($config_diff);
         if (!empty($config_diff)) {
           $update_patch[$config_name->getFullName()] = [
@@ -135,7 +147,28 @@ class ConfigHandler {
       }
     }
 
+    // We don't want to export configuration files in case we are making update
+    // front active configuration to configuration provided in files.
+    if (!$from_active) {
+      $this->exportConfigurations(array_keys($update_patch));
+    }
+
     return $update_patch ? $this->serializer->encode($update_patch) : FALSE;
+  }
+
+  /**
+   * Export new configurations for modules.
+   *
+   * @param array $configuration_list
+   *   List of configurations to export.
+   */
+  protected function exportConfigurations(array $configuration_list) {
+    foreach ($configuration_list as $configuration_name) {
+      $config_name = ConfigName::createByFullName($configuration_name);
+
+      $config_data = $this->configDiffer->stripIgnore($this->configReverter->getFromActive($config_name->getType(), $config_name->getName()));
+      $this->configExporter->exportConfiguration($config_name, $config_data);
+    }
   }
 
   /**
@@ -143,24 +176,34 @@ class ConfigHandler {
    *
    * @param \Drupal\update_helper\ConfigName $config_name
    *   Configuration name.
+   * @param bool $from_active
+   *   Flag if configuration should be updated from active to Yml file configs.
    *
    * @return \Drupal\Component\Diff\Engine\DiffOp[]
    *   Return diff edits.
    */
-  protected function getConfigDiff(ConfigName $config_name) {
-    $old_config = $this->getConfigFrom(
+  protected function getConfigDiff(ConfigName $config_name, $from_active) {
+    $active_config = $this->getConfigFrom(
       $this->configReverter->getFromActive($config_name->getType(), $config_name->getName())
     );
 
-    $new_config = $this->getConfigFrom(
+    $file_config = $this->getConfigFrom(
       $this->configReverter->getFromExtension($config_name->getType(), $config_name->getName())
     );
 
-    if (!$this->configDiffer->same($new_config, $old_config)) {
-      $update_diff = $this->configDiffer->diff(
-        $old_config,
-        $new_config
-      );
+    if (!$this->configDiffer->same($file_config, $active_config)) {
+      if ($from_active) {
+        $update_diff = $this->configDiffer->diff(
+          $active_config,
+          $file_config
+        );
+      }
+      else {
+        $update_diff = $this->configDiffer->diff(
+          $file_config,
+          $active_config
+        );
+      }
 
       /** @var \Drupal\Component\Diff\Engine\DiffOp[] $edits */
       return $update_diff->getEdits();
