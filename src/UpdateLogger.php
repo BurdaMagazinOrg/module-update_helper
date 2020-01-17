@@ -3,7 +3,9 @@
 namespace Drupal\update_helper;
 
 use Psr\Log\AbstractLogger;
-use Psr\Log\LogLevel;
+use Symfony\Component\Console\Logger\ConsoleLogger;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\StreamOutput;
 
 /**
  * Helper service for logging in update hooks provided by update helper.
@@ -24,13 +26,18 @@ class UpdateLogger extends AbstractLogger {
   protected $logs = [];
 
   /**
-   * Mapping from Psr to Drush log level.
+   * The console logger.
    *
-   * @var array
+   * @var \Psr\Log\LoggerInterface
    */
-  protected static $psrDrushLogLevels = [
-    LogLevel::INFO => 'ok',
-  ];
+  protected $cliLogger;
+
+  /**
+   * The console output.
+   *
+   * @var string
+   */
+  protected $cliOutput = 'php://stderr';
 
   /**
    * {@inheritdoc}
@@ -70,27 +77,27 @@ class UpdateLogger extends AbstractLogger {
   }
 
   /**
-   * Output logs in format suitable for drush command and clear logs too.
+   * Returns console logger.
    *
-   * @throws \RuntimeException
-   *   When method is not executed in drush environment.
+   * @return \Psr\Log\LoggerInterface
+   *   Returns console logger.
    */
-  protected function outputDrush() {
-    // Check for "drush_log" should be done by caller.
-    if (!function_exists('drush_log')) {
-      throw new \RuntimeException('Required global method "drush_log" is not available.');
+  protected function getCliLogger() {
+    if (empty($this->cliLogger)) {
+      $this->cliLogger = new ConsoleLogger(new StreamOutput(fopen($this->cliOutput, 'w'), OutputInterface::VERBOSITY_DEBUG));
     }
 
-    $current_logs = $this->cleanLogs();
-    foreach ($current_logs as $log_entry) {
-      if (isset(static::$psrDrushLogLevels[$log_entry[0]])) {
-        $drush_log_level = static::$psrDrushLogLevels[$log_entry[0]];
-      }
-      else {
-        $drush_log_level = $log_entry[0];
-      }
+    return $this->cliLogger;
+  }
 
-      drush_log($log_entry[1], $drush_log_level);
+  /**
+   * Output logs in format suitable for console command and clear logs too.
+   */
+  protected function outputCli() {
+    $console_logger = $this->getCliLogger();
+
+    foreach ($this->cleanLogs() as $log_entry) {
+      $console_logger->log($log_entry[0], $log_entry[1]);
     }
   }
 
@@ -98,11 +105,11 @@ class UpdateLogger extends AbstractLogger {
    * Output log result, depending on channel used and clean log.
    *
    * @return string
-   *   Returns HTML string in case of non drush execution.
+   *   Returns HTML string in case of non console execution.
    */
   public function output() {
-    if (function_exists('drush_log') && PHP_SAPI === 'cli') {
-      $this->outputDrush();
+    if (PHP_SAPI === 'cli') {
+      $this->outputCli();
 
       return '';
     }
