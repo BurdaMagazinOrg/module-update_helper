@@ -22,9 +22,11 @@
         }
     ],
     "require": {
-        "drupal/config_update": "^1.5"
+        "drupal/config_update": "^1.5",
+        "symfony/console": "~3.4.0 || ^4.4"
     },
     "require-dev": {
-	    "drupal/checklistapi": "~1.0"
+        "drupal/checklistapi": "~1.0",
+        "drupal/console": "~1.2"
     }
 }
