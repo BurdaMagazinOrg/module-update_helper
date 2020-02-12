@@ -21,10 +21,12 @@ branches:
 env:
   global:
     - PATH="$PATH:$HOME/.composer/vendor/bin"
-    - DRUPAL_TRAVIS_TEST_JAVASCRIPT=false
 
 before_install:
-  - composer global require thunder/travis
+  - composer global require thunder/drupal-testing
+
+before_script:
+  - phpenv config-rm xdebug.ini
 
 script:
   - test-drupal-project
