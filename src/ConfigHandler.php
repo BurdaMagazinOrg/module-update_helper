@@ -262,9 +262,9 @@ class ConfigHandler {
    */
   protected function getUpdateConfig(array $diffs) {
     $list_update = [
+      'delete' => [],
       'add' => [],
       'change' => [],
-      'delete' => [],
     ];
 
     foreach ($diffs as $diff_op) {
