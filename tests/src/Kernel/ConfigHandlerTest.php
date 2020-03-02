@@ -51,16 +51,16 @@ class ConfigHandlerTest extends KernelTestBase {
       '    status: false' . PHP_EOL .
       '    type: text' . PHP_EOL .
       '  update_actions:' . PHP_EOL .
+      '    delete:' . PHP_EOL .
+      '      lost_config: text' . PHP_EOL .
+      '      settings:' . PHP_EOL .
+      '        max_length: 123' . PHP_EOL .
       '    add:' . PHP_EOL .
       '      cardinality: 1' . PHP_EOL .
       '    change:' . PHP_EOL .
       '      settings: {  }' . PHP_EOL .
       '      status: true' . PHP_EOL .
-      '      type: text_with_summary' . PHP_EOL .
-      '    delete:' . PHP_EOL .
-      '      lost_config: text' . PHP_EOL .
-      '      settings:' . PHP_EOL .
-      '        max_length: 123' . PHP_EOL;
+      '      type: text_with_summary' . PHP_EOL;
   }
 
   /**
