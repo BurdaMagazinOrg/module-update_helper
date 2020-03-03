@@ -130,18 +130,18 @@ class UpdaterTest extends KernelTestBase {
 
     /** @var \Drupal\Core\Serialization\Yaml $yml_serializer */
     $yml_serializer = \Drupal::service('serialization.yaml');
-    file_put_contents($this->configDir . '/install/tour.tour.tour-update-helper-test.yml', $yml_serializer->encode($tour_config));
+    file_put_contents($this->configDir . '/install/tour.tour.tour-update-helper-test.yml', $yml_serializer::encode($tour_config));
 
     /** @var \Drupal\update_helper\ConfigHandler $config_handler */
     $config_handler = \Drupal::service('update_helper.config_handler');
 
     // Create update configuration for testExecuteUpdate.
     $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater', TRUE);
-    file_put_contents($patch_file_path, $yml_serializer->encode($this->getUpdateDefinition()));
+    file_put_contents($patch_file_path, $yml_serializer::encode($this->getUpdateDefinition()));
 
     // Create update configuration for testOnlyDeleteUpdate.
     $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater_only_delete', TRUE);
-    file_put_contents($patch_file_path, $yml_serializer->encode(
+    file_put_contents($patch_file_path, $yml_serializer::encode(
       [
         'field.storage.node.body' => [
           'expected_config' => [],

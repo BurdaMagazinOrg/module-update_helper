@@ -75,7 +75,7 @@ class ConfigExporter {
       if ($file_data) {
         $full_file_path = $config_storage->getFilePath($config_full_name);
 
-        return file_put_contents($full_file_path, $this->serializer->encode($data)) !== FALSE;
+        return file_put_contents($full_file_path, $this->serializer::encode($data)) !== FALSE;
       }
     }
 
