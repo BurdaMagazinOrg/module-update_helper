@@ -56,7 +56,7 @@ class ConfigHandler {
   protected $moduleHandler;
 
   /**
-   * Yaml serializer.
+   * The serializer.
    *
    * @var \Drupal\Component\Serialization\SerializationInterface
    */
@@ -96,18 +96,18 @@ class ConfigHandler {
    *   Configuration transformer for diffing.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   Module handler service.
-   * @param \Drupal\Component\Serialization\SerializationInterface $yaml_serializer
+   * @param \Drupal\Component\Serialization\SerializationInterface $serializer
    *   Array serializer service.
    * @param \Drupal\update_helper\ConfigExporter $config_exporter
    *   Configuration exporter service.
    */
-  public function __construct(ConfigListInterface $config_list, ConfigRevertInterface $config_reverter, ConfigDiffInterface $config_differ, ConfigDiffTransformer $config_diff_transformer, ModuleHandlerInterface $module_handler, SerializationInterface $yaml_serializer, ConfigExporter $config_exporter) {
+  public function __construct(ConfigListInterface $config_list, ConfigRevertInterface $config_reverter, ConfigDiffInterface $config_differ, ConfigDiffTransformer $config_diff_transformer, ModuleHandlerInterface $module_handler, SerializationInterface $serializer, ConfigExporter $config_exporter) {
     $this->configList = $config_list;
     $this->configReverter = $config_reverter;
     $this->configDiffer = $config_differ;
     $this->configDiffTransformer = $config_diff_transformer;
     $this->moduleHandler = $module_handler;
-    $this->serializer = $yaml_serializer;
+    $this->serializer = $serializer;
     $this->configExporter = $config_exporter;
   }
 
@@ -120,7 +120,7 @@ class ConfigHandler {
    * @param string[] $module_names
    *   Module name that will be used to generate patch for it.
    * @param bool $from_active
-   *   Flag if configuration should be updated from active to Yml file configs.
+   *   Flag if configuration should be updated from active to file configs.
    *
    * @return string|bool
    *   Rendering generated patch file name or FALSE if patch is empty.
@@ -177,7 +177,7 @@ class ConfigHandler {
    * @param \Drupal\update_helper\ConfigName $config_name
    *   Configuration name.
    * @param bool $from_active
-   *   Flag if configuration should be updated from active to Yml file configs.
+   *   Flag if configuration should be updated from active to file configs.
    *
    * @return \Drupal\Component\Diff\Engine\DiffOp[]
    *   Return diff edits.
@@ -303,9 +303,9 @@ class ConfigHandler {
    *   Returns list of edits that should be removed.
    */
   protected function getRemovableEdits(array $original_edits, array $new_edits) {
-    $additional_edits = array_udiff($original_edits, $new_edits, function ($yml_row1, $yml_row2) {
-      $key1 = explode(' : ', $yml_row1);
-      $key2 = explode(' : ', $yml_row2);
+    $additional_edits = array_udiff($original_edits, $new_edits, function ($diff_row1, $diff_row2) {
+      $key1 = explode(' : ', $diff_row1);
+      $key2 = explode(' : ', $diff_row2);
 
       // Values from flat array will be marked for removal.
       if (substr($key1[0], -3) === '::-' && substr($key2[0], -3) === '::-') {
@@ -384,7 +384,7 @@ class ConfigHandler {
       mkdir($update_dir, 0755, TRUE);
     }
 
-    return $update_dir . '/' . $update_name . '.yml';
+    return $update_dir . '/' . $update_name . '.' . $this->serializer->getFileExtension();
   }
 
   /**
