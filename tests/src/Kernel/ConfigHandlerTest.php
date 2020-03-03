@@ -3,6 +3,7 @@
 namespace Drupal\Tests\update_helper\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\update_helper\ConfigHandler;
 
 /**
  * Automated tests for ConfigName class.
@@ -198,6 +199,27 @@ class ConfigHandlerTest extends KernelTestBase {
 
     $this->assertEqual('text', $fileData['type']);
     $this->assertEqual(['max_length' => 321], $fileData['settings']);
+  }
+
+  /**
+   * @covers \Drupal\update_helper\ConfigHandler::getPatchFile
+   */
+  public function testGetPatchFileSerializerSupport() {
+    $configList = \Drupal::service('config_update.config_list');
+    $configReverter = \Drupal::service('config_update.config_update');
+    $configDiffer = \Drupal::service('update_helper.config_differ');
+    $configDiffTransformer = \Drupal::service('update_helper.config_diff_transformer');
+    $moduleHandler = \Drupal::service('module_handler');
+    $configExporter = \Drupal::service('update_helper.config_exporter');
+
+    $configHandlerYaml = new ConfigHandler($configList, $configReverter, $configDiffer, $configDiffTransformer, $moduleHandler, \Drupal::service('serialization.yaml'), $configExporter);
+    $this->assertStringEndsWith('config_handler_test.yml', $configHandlerYaml->getPatchFile('update_helper', 'config_handler_test'));
+
+    $configHandlerJson = new ConfigHandler($configList, $configReverter, $configDiffer, $configDiffTransformer, $moduleHandler, \Drupal::service('serialization.json'), $configExporter);
+    $this->assertStringEndsWith('config_handler_test.json', $configHandlerJson->getPatchFile('update_helper', 'config_handler_test'));
+
+    $configHandlerPhpSerialize = new ConfigHandler($configList, $configReverter, $configDiffer, $configDiffTransformer, $moduleHandler, \Drupal::service('serialization.phpserialize'), $configExporter);
+    $this->assertStringEndsWith('config_handler_test.serialized', $configHandlerPhpSerialize->getPatchFile('update_helper', 'config_handler_test'));
   }
 
 }
