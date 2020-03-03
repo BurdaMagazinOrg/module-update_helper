@@ -68,8 +68,8 @@ class ConfigDiffTransformer {
   public function reverseTransform(array $config_string_lines) {
     $result = [];
 
-    foreach ($config_string_lines as $yml_row) {
-      $key_value = explode(' : ', $yml_row);
+    foreach ($config_string_lines as $row) {
+      $key_value = explode(' : ', $row);
 
       $key_path = explode('::', $key_value[0]);
 
