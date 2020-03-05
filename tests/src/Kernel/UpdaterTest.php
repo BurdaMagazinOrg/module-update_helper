@@ -130,7 +130,29 @@ class UpdaterTest extends KernelTestBase {
 
     /** @var \Drupal\Core\Serialization\Yaml $yml_serializer */
     $yml_serializer = \Drupal::service('serialization.yaml');
-    file_put_contents($this->configDir . '/install/tour.tour.tour-update-helper-test.yml', $yml_serializer->encode($tour_config));
+    file_put_contents($this->configDir . '/install/tour.tour.tour-update-helper-test.yml', $yml_serializer::encode($tour_config));
+
+    /** @var \Drupal\update_helper\ConfigHandler $config_handler */
+    $config_handler = \Drupal::service('update_helper.config_handler');
+
+    // Create update configuration for testExecuteUpdate.
+    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater', TRUE);
+    file_put_contents($patch_file_path, $yml_serializer::encode($this->getUpdateDefinition()));
+
+    // Create update configuration for testOnlyDeleteUpdate.
+    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater_only_delete', TRUE);
+    file_put_contents($patch_file_path, $yml_serializer::encode(
+      [
+        'field.storage.node.body' => [
+          'expected_config' => [],
+          'update_actions' => [
+            'delete' => [
+              'lost_config' => 'text',
+            ],
+          ],
+        ],
+      ]
+    ));
   }
 
   /**
@@ -145,6 +167,7 @@ class UpdaterTest extends KernelTestBase {
 
     // Remove configuration update definition.
     unlink($config_dir . '/update/test_updater.yml');
+    unlink($config_dir . '/update/test_updater_only_delete.yml');
     rmdir($config_dir . '/update');
 
     rmdir($config_dir);
@@ -178,15 +201,6 @@ class UpdaterTest extends KernelTestBase {
     /** @var \Drupal\update_helper\Updater $update_helper */
     $update_helper = \Drupal::service('update_helper.updater');
 
-    /** @var \Drupal\Core\Serialization\Yaml $yml_serializer */
-    $yml_serializer = \Drupal::service('serialization.yaml');
-
-    /** @var \Drupal\update_helper\ConfigHandler $config_handler */
-    $config_handler = \Drupal::service('update_helper.config_handler');
-
-    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater', TRUE);
-    file_put_contents($patch_file_path, $yml_serializer->encode($this->getUpdateDefinition()));
-
     $this->assertFalse($this->moduleHandler->moduleExists('help'), 'Module "help" should not be installed.');
 
     // Create some configuration file for tour, so that it can be imported.
@@ -200,6 +214,33 @@ class UpdaterTest extends KernelTestBase {
     $this->assertEquals($expected_config_data, $config_factory->get('field.storage.node.body')->get());
     $this->assertTrue($this->moduleHandler->moduleExists('help'), 'Module "help" should be installed.');
     $this->assertEquals('tour-update-helper-test', $this->container->get('config.factory')->get('tour.tour.tour-update-helper-test')->get('id'), 'Tour configuration should exist.');
+  }
+
+  /**
+   * Test issue with using delete action without expected.
+   */
+  public function testOnlyDeleteUpdate() {
+    /** @var \Drupal\config_update\ConfigRevertInterface $config_reverter */
+    $config_reverter = \Drupal::service('config_update.config_update');
+    $config_reverter->import('field_storage_config', 'node.body');
+
+    $config = $this->config('field.storage.node.body');
+    $expected_config_data = $config->get();
+
+    $config_data = $expected_config_data;
+    $config_data['lost_config'] = 'text';
+
+    $config->setData($config_data)->save(TRUE);
+
+    /** @var \Drupal\update_helper\Updater $update_helper */
+    $update_helper = \Drupal::service('update_helper.updater');
+
+    // Ensure that configuration had new values.
+    $this->assertEquals('text', $this->config('field.storage.node.body')->get('lost_config'));
+
+    // Execute update and validate new state.
+    $update_helper->executeUpdate('update_helper', 'test_updater_only_delete');
+    $this->assertEquals($expected_config_data, $this->config('field.storage.node.body')->get());
   }
 
 }

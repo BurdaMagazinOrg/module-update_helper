@@ -153,7 +153,7 @@ class ConfigHandler {
       $this->exportConfigurations(array_keys($update_patch));
     }
 
-    return $update_patch ? $this->serializer->encode($update_patch) : FALSE;
+    return $update_patch ? $this->serializer::encode($update_patch) : FALSE;
   }
 
   /**
@@ -262,9 +262,9 @@ class ConfigHandler {
    */
   protected function getUpdateConfig(array $diffs) {
     $list_update = [
+      'delete' => [],
       'add' => [],
       'change' => [],
-      'delete' => [],
     ];
 
     foreach ($diffs as $diff_op) {
