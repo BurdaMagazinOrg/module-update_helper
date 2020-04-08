@@ -22,7 +22,7 @@
         }
     ],
     "require": {
-        "drupal/config_update": "^1.5",
+        "drupal/config_update": "1.x-dev",
         "symfony/console": "~3.4.0 || ^4.4"
     },
     "require-dev": {
