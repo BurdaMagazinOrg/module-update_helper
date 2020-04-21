@@ -1,0 +1,5 @@
+services:
+  update_helper.commands:
+    class: \Drupal\update_helper\Commands\GenerateConfigurationUpdateCommands
+    tags:
+      - { name: drush.command }

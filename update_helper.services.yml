@@ -15,3 +15,4 @@ services:
   update_helper.config_exporter:
     class: Drupal\update_helper\ConfigExporter
     arguments: ['@config_update.extension_storage', '@config_update.extension_optional_storage', '@serialization.yaml']
+
