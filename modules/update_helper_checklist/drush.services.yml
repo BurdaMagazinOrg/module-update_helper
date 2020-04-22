@@ -1,0 +1,5 @@
+services:
+  update_helper_checklist.commands:
+    class: \Drupal\update_helper_checklist\Commands\UpdateHelperChecklistCommands
+    tags:
+      - { name: drush.command }

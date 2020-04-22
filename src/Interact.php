@@ -59,7 +59,7 @@ class Interact {
     }
 
     if (empty($includeModules)) {
-      $includeModules = $this->outputStyle->ask(' Provide a comma-separated list of modules which configurations should be included in update (empty for all).');
+      $includeModules = $this->outputStyle->ask(' Provide a comma-separated list of modules which configurations should be included in update (empty for all).', ' ');
       $this->input->setOption('include-modules', $includeModules);
     }
 

@@ -13,13 +13,6 @@ use Symfony\Component\EventDispatcher\Event;
 class CommandConfigureEvent extends Event {
 
   /**
-   * Console command for this event.
-   *
-   * @var \Drupal\Console\Core\Command\Command
-   */
-  protected $command;
-
-  /**
    * CommandOptionsEvent constructor.
    *
    * @param \Drupal\Console\Core\Command\Command $command

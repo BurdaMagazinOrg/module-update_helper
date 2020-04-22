@@ -3,6 +3,8 @@
 namespace Drupal\update_helper\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
+use Drupal\Core\Extension\ModuleExtensionList;
+use Drupal\Core\Extension\ProfileExtensionList;
 use Drupal\update_helper\Interact;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,9 +13,37 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * A Drush commandfile.
+ * The Drush command file for the generate:configuration:update command.
  */
 class GenerateConfigurationUpdateCommands extends DrushCommands {
+
+  /**
+   * The list of available modules.
+   *
+   * @var \Drupal\Core\Extension\ModuleExtensionList
+   */
+  protected $moduleExtensionList;
+
+  /**
+   * The list of available profiles.
+   *
+   * @var \Drupal\Core\Extension\ProfileExtensionList
+   */
+  protected $profileExtensionList;
+
+  /**
+   * GenerateConfigurationUpdateCommands constructor.
+   *
+   * @param \Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
+   *   The list of available modules.
+   * @param \Drupal\Core\Extension\ProfileExtensionList $profileExtensionList
+   *   The list of available profiles.
+   */
+  public function __construct(ModuleExtensionList $moduleExtensionList, ProfileExtensionList $profileExtensionList) {
+    parent::__construct();
+    $this->moduleExtensionList = $moduleExtensionList;
+    $this->profileExtensionList = $profileExtensionList;
+  }
 
   /**
    * Generate configuration update.
@@ -21,6 +51,7 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    * @param array $options
    *   An associative array of options whose values come from cli, aliases,
    *   config, etc.
+   * @command generate:configuration:update
    * @option module
    *   The module name where the update definition will be saved and update
    *   hook generated.
@@ -39,24 +70,16 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    *   Generate a configuration update and update hook with update
    *   number "8001" for the "update_helper" module.
    *
-   * @command generate:configuration:update
    * @aliases gcu
    */
   public function generateConfigurationUpdate(array $options = [
     'module' => InputOption::VALUE_REQUIRED,
     'update-n' => InputOption::VALUE_REQUIRED,
     'description' => InputOption::VALUE_REQUIRED,
-    'include-modules' => InputOption::VALUE_REQUIRED,
+    'include-modules' => InputOption::VALUE_OPTIONAL,
     'from-active' => FALSE,
   ]): void {
     $this->logger()->success(print_r($options, TRUE));
-    if ($options['from-active']) {
-      $this->logger()->success('from active is true');
-    }
-    else {
-      $this->logger()->success('from active is false');
-    }
-
   }
 
   /**
