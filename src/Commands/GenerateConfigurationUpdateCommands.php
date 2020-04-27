@@ -3,8 +3,7 @@
 namespace Drupal\update_helper\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
-use Drupal\Core\Extension\ModuleExtensionList;
-use Drupal\update_helper\Interact;
+use Drupal\update_helper\ConsoleInteraction;
 use Drush\Exceptions\UserAbortException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -19,19 +18,19 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
   /**
    * The user interaction helper.
    *
-   * @var \Drupal\update_helper\Interact
+   * @var \Drupal\update_helper\ConsoleInteraction
    */
-  protected $interact;
+  protected $consoleInteraction;
 
   /**
    * GenerateConfigurationUpdateCommands constructor.
    *
-   * @param \Drupal\update_helper\Interact $interact
+   * @param \Drupal\update_helper\ConsoleInteraction $consoleInteraction
    *   The user interaction helper.
    */
-  public function __construct(Interact $interact) {
+  public function __construct(ConsoleInteraction $consoleInteraction) {
     parent::__construct();
-    $this->interact = $interact;
+    $this->consoleInteraction = $consoleInteraction;
   }
 
   /**
@@ -60,6 +59,8 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    *   number "8001" for the "update_helper" module.
    *
    * @aliases gcu
+   *
+   * @throws \Drush\Exceptions\UserAbortException
    */
   public function generateConfigurationUpdate(array $options = [
     'module' => InputOption::VALUE_REQUIRED,
@@ -80,7 +81,7 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    * @hook interact generate:configuration:update
    */
   public function interact(InputInterface $input, OutputInterface $output, AnnotationData $annotationData): void {
-    $this->interact->interactGenerateConfigurationUpdate($input, $output);
+    $this->consoleInteraction->interactGenerateConfigurationUpdate($input, $output);
   }
 
 }

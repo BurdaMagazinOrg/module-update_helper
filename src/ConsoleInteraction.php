@@ -9,11 +9,11 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * The CLI Interaction helper.
+ * The console Interaction helper.
  *
  * @package Drupal\update_helper
  */
-class Interact {
+class ConsoleInteraction {
 
   /**
    * The module extension list.

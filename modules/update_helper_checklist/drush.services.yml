@@ -1,6 +1,6 @@
 services:
   update_helper_checklist.commands:
     class: Drupal\update_helper_checklist\Commands\UpdateHelperChecklistCommands
-    arguments: ['@update_helper_checklist.update_checklist']
+    arguments: ['@update_helper_checklist.console_interaction']
     tags:
       - { name: drush.command }
