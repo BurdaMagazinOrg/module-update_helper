@@ -4,13 +4,12 @@ namespace Drupal\update_helper\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Drupal\Core\Extension\ModuleExtensionList;
-use Drupal\Core\Extension\ProfileExtensionList;
 use Drupal\update_helper\Interact;
+use Drush\Exceptions\UserAbortException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * The Drush command file for the generate:configuration:update command.
@@ -18,31 +17,21 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class GenerateConfigurationUpdateCommands extends DrushCommands {
 
   /**
-   * The list of available modules.
+   * The user interaction helper.
    *
-   * @var \Drupal\Core\Extension\ModuleExtensionList
+   * @var \Drupal\update_helper\Interact
    */
-  protected $moduleExtensionList;
-
-  /**
-   * The list of available profiles.
-   *
-   * @var \Drupal\Core\Extension\ProfileExtensionList
-   */
-  protected $profileExtensionList;
+  protected $interact;
 
   /**
    * GenerateConfigurationUpdateCommands constructor.
    *
-   * @param \Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
-   *   The list of available modules.
-   * @param \Drupal\Core\Extension\ProfileExtensionList $profileExtensionList
-   *   The list of available profiles.
+   * @param \Drupal\update_helper\Interact $interact
+   *   The user interaction helper.
    */
-  public function __construct(ModuleExtensionList $moduleExtensionList, ProfileExtensionList $profileExtensionList) {
+  public function __construct(Interact $interact) {
     parent::__construct();
-    $this->moduleExtensionList = $moduleExtensionList;
-    $this->profileExtensionList = $profileExtensionList;
+    $this->interact = $interact;
   }
 
   /**
@@ -79,7 +68,10 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
     'include-modules' => InputOption::VALUE_OPTIONAL,
     'from-active' => FALSE,
   ]): void {
-    $this->logger()->success(print_r($options, TRUE));
+    if (!$this->io()->confirm(dt('Do you want proceed with generating the update?'))) {
+      throw new UserAbortException();
+    }
+    $this->logger()->notice(print_r($options, TRUE));
   }
 
   /**
@@ -88,9 +80,7 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    * @hook interact generate:configuration:update
    */
   public function interact(InputInterface $input, OutputInterface $output, AnnotationData $annotationData): void {
-    $outputStyle = new SymfonyStyle($input, $output);
-    $interact = new Interact($input, $outputStyle);
-    $interact->interactGenerateConfigurationUpdate();
+    $this->interact->interactGenerateConfigurationUpdate($input, $output);
   }
 
 }

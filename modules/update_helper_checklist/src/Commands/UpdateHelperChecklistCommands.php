@@ -4,6 +4,7 @@ namespace Drupal\update_helper_checklist\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotatedCommand;
 use Consolidation\AnnotatedCommand\AnnotationData;
+use Drupal\update_helper_checklist\UpdateChecklist;
 use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,6 +12,24 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 class UpdateHelperChecklistCommands extends DrushCommands {
+
+  /**
+   * Update checklist service.
+   *
+   * @var \Drupal\update_helper_checklist\UpdateChecklist
+   */
+  protected $updateChecklist;
+
+  /**
+   * UpdateHelperChecklistCommands constructor.
+   *
+   * @param \Drupal\update_helper_checklist\UpdateChecklist $updateChecklist
+   *   The update checklist service.
+   */
+  public function __construct(UpdateChecklist $updateChecklist) {
+    parent::__construct();
+    $this->updateChecklist = $updateChecklist;
+  }
 
   /**
    * Additional options for generate configuration update command.
@@ -64,7 +83,9 @@ class UpdateHelperChecklistCommands extends DrushCommands {
     $failureMessage = $this->input->getOption('failure-message');
 
     if (empty($updateVersion)) {
-      $updateVersion = $outputStyle->ask('Please enter a update version for checklist collection');
+      $updateVersions = $this->updateChecklist->getUpdateVersions($input->getOption('module'));
+
+      $updateVersion = $outputStyle->ask('Please enter a update version for checklist collection', $updateVersions[array_key_last($updateVersions)]);
       $input->setOption('update-version', $updateVersion);
     }
 

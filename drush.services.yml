@@ -1,6 +1,6 @@
 services:
   update_helper.commands:
-    class: \Drupal\update_helper\Commands\GenerateConfigurationUpdateCommands
-    arguments: ['@extension.list.module', '@extension.list.profile']
+    class: Drupal\update_helper\Commands\GenerateConfigurationUpdateCommands
+    arguments: ['@update_helper.interact']
     tags:
       - { name: drush.command }
