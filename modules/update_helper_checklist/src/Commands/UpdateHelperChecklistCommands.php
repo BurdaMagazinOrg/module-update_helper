@@ -25,13 +25,13 @@ class UpdateHelperChecklistCommands extends DrushCommands {
   /**
    * UpdateHelperChecklistCommands constructor.
    *
-   * @param \Drupal\update_helper_checklist\ConsoleInteraction $consoleInteraction
+   * @param \Drupal\update_helper_checklist\ConsoleInteraction $consoleCommands
    *   The user interaction helper.
    */
-  public function __construct(ConsoleInteraction $consoleInteraction) {
+  public function __construct(ConsoleInteraction $consoleCommands) {
     parent::__construct();
 
-    $this->consoleInteraction = $consoleInteraction;
+    $this->consoleInteraction = $consoleCommands;
   }
 
   /**

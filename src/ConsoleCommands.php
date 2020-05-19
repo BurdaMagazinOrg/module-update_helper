@@ -3,17 +3,18 @@
 namespace Drupal\update_helper;
 
 use Drupal\Core\Extension\ModuleExtensionList;
+use Drupal\update_helper\Generator\ConfigurationUpdateGenerator;
+use Drush\Exceptions\UserAbortException;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * The console Interaction helper.
+ * The console command helper.
  *
  * @package Drupal\update_helper
  */
-class ConsoleInteraction {
+class ConsoleCommands {
 
   /**
    * The module extension list.
@@ -23,13 +24,61 @@ class ConsoleInteraction {
   protected $extensionList;
 
   /**
+   * Update generator for configuration update hook.
+   *
+   * @var \Drupal\update_helper\Generator\ConfigurationUpdateGenerator
+   */
+  protected $generator;
+
+  /**
    * Interact constructor.
    *
    * @param \Drupal\Core\Extension\ModuleExtensionList $extensionList
    *   The module extension list.
+   * @param \Drupal\update_helper\Generator\ConfigurationUpdateGenerator $generator
+   *   Configuration update generator.
    */
-  public function __construct(ModuleExtensionList $extensionList) {
+  public function __construct(ModuleExtensionList $extensionList, ConfigurationUpdateGenerator $generator) {
     $this->extensionList = $extensionList;
+    $this->generator = $generator;
+  }
+
+  /**
+   * Execution of the generate:configuration:update command.
+   *
+   * @param array $options
+   *   An associative array of options whose values come from cli, aliases,
+   *   config, etc.
+   * @param \Symfony\Component\Console\Style\SymfonyStyle $io
+   *   The CLI output style.
+   *
+   * @throws \Drush\Exceptions\UserAbortException
+   */
+  public function executeGenerateConfigurationUpdate(array $options, SymfonyStyle $io): void {
+    if (!$io->confirm(dt('Do you want proceed with generating the update?'))) {
+      throw new UserAbortException();
+    }
+
+    $module = $options['module'];
+    $update_number = $options['update-n'];
+
+    $last_update_number = drupal_get_installed_schema_version($module);
+    if ($update_number <= $last_update_number) {
+      throw new \InvalidArgumentException(
+        dt('The update number "!number" is not valid', $update_number)
+      );
+    }
+
+    $include_modules = $options['include-modules'];
+    $from_active = $options['from-active'];
+
+    // Execute configuration update generation.
+    if ($this->generator->generate($module, $update_number, $include_modules, $from_active)) {
+      $io->note(dt('Configuration update is successfully generated.'));
+    }
+    else {
+      $io->note(dt('There are no configuration changes that should be exported for the update.'));
+    }
   }
 
   /**
@@ -37,10 +86,10 @@ class ConsoleInteraction {
    *
    * @param \Symfony\Component\Console\Input\InputInterface $input
    *   The CLI input.
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   The CLI output.
+   * @param \Symfony\Component\Console\Style\SymfonyStyle $io
+   *   The CLI output style.
    */
-  public function interactGenerateConfigurationUpdate(InputInterface $input, OutputInterface $output): void {
+  public function interactGenerateConfigurationUpdate(InputInterface $input, SymfonyStyle $io): void {
     $extensions = $this->getExtensions();
     $defaultExtension = NULL;
 
@@ -51,7 +100,6 @@ class ConsoleInteraction {
       }
     }
 
-    $io = new SymfonyStyle($input, $output);
     $module = $input->getOption('module');
     $updateNumber = $input->getOption('update-n');
     $description = $input->getOption('description');

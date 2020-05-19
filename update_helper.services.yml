@@ -15,6 +15,6 @@ services:
   update_helper.config_exporter:
     class: Drupal\update_helper\ConfigExporter
     arguments: ['@config_update.extension_storage', '@config_update.extension_optional_storage', '@serialization.yaml']
-  update_helper.console_interaction:
-    class: Drupal\update_helper\ConsoleInteraction
-    arguments: ['@extension.list.module']
+  update_helper.console_commands:
+    class: Drupal\update_helper\ConsoleCommands
+    arguments: ['@extension.list.module', '@update_helper.update_generator']

@@ -3,7 +3,7 @@
 namespace Drupal\update_helper\Commands;
 
 use Consolidation\AnnotatedCommand\AnnotationData;
-use Drupal\update_helper\ConsoleInteraction;
+use Drupal\update_helper\ConsoleCommands;
 use Drush\Exceptions\UserAbortException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -18,19 +18,19 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
   /**
    * The user interaction helper.
    *
-   * @var \Drupal\update_helper\ConsoleInteraction
+   * @var \Drupal\update_helper\ConsoleCommands
    */
-  protected $consoleInteraction;
+  protected $consoleCommands;
 
   /**
    * GenerateConfigurationUpdateCommands constructor.
    *
-   * @param \Drupal\update_helper\ConsoleInteraction $consoleInteraction
+   * @param \Drupal\update_helper\ConsoleCommands $consoleCommands
    *   The user interaction helper.
    */
-  public function __construct(ConsoleInteraction $consoleInteraction) {
+  public function __construct(ConsoleCommands $consoleCommands) {
     parent::__construct();
-    $this->consoleInteraction = $consoleInteraction;
+    $this->consoleCommands = $consoleCommands;
   }
 
   /**
@@ -69,10 +69,8 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
     'include-modules' => InputOption::VALUE_OPTIONAL,
     'from-active' => FALSE,
   ]): void {
-    if (!$this->io()->confirm(dt('Do you want proceed with generating the update?'))) {
-      throw new UserAbortException();
-    }
     $this->logger()->notice(print_r($options, TRUE));
+    $this->consoleCommands->executeGenerateConfigurationUpdate($options, $this->io());
   }
 
   /**
@@ -81,7 +79,7 @@ class GenerateConfigurationUpdateCommands extends DrushCommands {
    * @hook interact generate:configuration:update
    */
   public function interact(InputInterface $input, OutputInterface $output, AnnotationData $annotationData): void {
-    $this->consoleInteraction->interactGenerateConfigurationUpdate($input, $output);
+    $this->consoleCommands->interactGenerateConfigurationUpdate($input, $this->io());
   }
 
 }
