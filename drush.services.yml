@@ -1,6 +1,5 @@
 services:
-  update_helper.commands:
-    class: Drupal\update_helper\Commands\GenerateConfigurationUpdateCommands
-    arguments: ['@update_helper.console_commands']
+  update_helper.generate.update:
+    class: Drupal\update_helper\Generators\ConfigurationUpdate
     tags:
-      - { name: drush.command }
+      - { name: drush.generator }
