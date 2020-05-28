@@ -5,6 +5,7 @@ namespace Drupal\update_helper_checklist\Commands;
 use Consolidation\AnnotatedCommand\AnnotatedCommand;
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Drupal\update_helper_checklist\ConsoleInteraction;
+use DrupalCodeGenerator\Command\BaseGenerator;
 use Drush\Commands\DrushCommands;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

@@ -76,14 +76,8 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
    *   Update checklist service.
    */
-  public function __construct(ConfigurationUpdateGenerator $generator, TranslatorManager $translator_manager, UpdateChecklist $update_checklist) {
-    $this->generator = $generator;
-    $this->translatorManager = $translator_manager;
+  public function __construct(UpdateChecklist $update_checklist) {
     $this->updateChecklist = $update_checklist;
-
-    // Init required options for this subscriber to work.
-    $translator_manager->addResourceTranslationsByExtension('update_helper_checklist', 'module');
-    $this->generator->addSkeletonDir(__DIR__ . '/../../templates/console');
   }
 
   /**

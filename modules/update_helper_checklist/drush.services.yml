@@ -1,6 +1,8 @@
 services:
-  update_helper_checklist.commands:
-    class: Drupal\update_helper_checklist\Commands\UpdateHelperChecklistCommands
-    arguments: ['@update_helper_checklist.console_interaction']
+  update_helper_checklist.command_gcu_subscriber:
+    class: Drupal\update_helper_checklist\Events\CommandGcuSubscriber
+    arguments: ['@update_helper_checklist.update_checklist']
     tags:
-      - { name: drush.command }
+      - { name: event_subscriber }
+
+

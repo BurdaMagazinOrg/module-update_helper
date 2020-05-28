@@ -1,5 +1,6 @@
 services:
   update_helper.generate.update:
     class: Drupal\update_helper\Generators\ConfigurationUpdate
+    arguments: ['@extension.list.module', '@event_dispatcher', '@module_handler', '@update_helper.config_handler']
     tags:
       - { name: drush.generator }

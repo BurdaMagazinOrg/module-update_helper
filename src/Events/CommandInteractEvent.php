@@ -3,6 +3,7 @@
 namespace Drupal\update_helper\Events;
 
 use Drupal\Console\Core\Command\Command;
+use DrupalCodeGenerator\Command\BaseGenerator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\Event;
@@ -35,6 +36,8 @@ class CommandInteractEvent extends Event {
    */
   protected $output;
 
+  protected $questions;
+
   /**
    * Command interact event constructor.
    *
@@ -45,10 +48,11 @@ class CommandInteractEvent extends Event {
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    *   Output interface.
    */
-  public function __construct(Command $command, InputInterface $input, OutputInterface $output) {
+  public function __construct(BaseGenerator $command, InputInterface $input, OutputInterface $output, array $questions) {
     $this->command = $command;
     $this->input = $input;
     $this->output = $output;
+    $this->questions = $questions;
   }
 
   /**
@@ -79,6 +83,10 @@ class CommandInteractEvent extends Event {
    */
   public function getOutput() {
     return $this->output;
+  }
+
+  public function getQuestions() {
+    return $this->questions;
   }
 
 }
