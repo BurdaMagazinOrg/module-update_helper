@@ -3,6 +3,7 @@
 namespace Drupal\update_helper\Events;
 
 use Drupal\Console\Core\Command\Command;
+use DrupalCodeGenerator\Command\BaseGenerator;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -19,33 +20,15 @@ class CommandExecuteEvent extends Event {
    */
   protected $command;
 
-  /**
-   * Module name.
-   *
-   * @var string
-   */
-  protected $module;
+
 
   /**
-   * Update number.
-   *
-   * @var int
-   */
-  protected $updateNumber;
-
-  /**
-   * Command options.
+   * The collected variables.
    *
    * @var array
    */
-  protected $commandOptions;
+  protected $vars;
 
-  /**
-   * Flag if execution was successful.
-   *
-   * @var bool
-   */
-  protected $successful;
 
   /**
    * Command execute event constructor.
@@ -61,12 +44,10 @@ class CommandExecuteEvent extends Event {
    * @param bool $successful
    *   Successful execution of command.
    */
-  public function __construct(Command $command, $module, $update_number, array $command_options, $successful) {
+  public function __construct(BaseGenerator $command, array $vars) {
     $this->command = $command;
-    $this->module = $module;
-    $this->updateNumber = $update_number;
-    $this->commandOptions = $command_options;
-    $this->successful = $successful;
+    $this->vars = $vars;
+
   }
 
   /**
@@ -80,43 +61,13 @@ class CommandExecuteEvent extends Event {
   }
 
   /**
-   * Get module name.
-   *
-   * @return string
-   *   Returns module name.
-   */
-  public function getModule() {
-    return $this->module;
-  }
-
-  /**
-   * Get update number.
-   *
-   * @return int
-   *   Returns update number.
-   */
-  public function getUpdateNumber() {
-    return $this->updateNumber;
-  }
-
-  /**
-   * Get options.
+   * The command questions.
    *
    * @return array
-   *   Returns options.
+   *   All the questions.
    */
-  public function getOptions() {
-    return $this->commandOptions;
-  }
-
-  /**
-   * Returns is command execution successful.
-   *
-   * @return bool
-   *   Returns status of command execution.
-   */
-  public function getSuccessful() {
-    return $this->successful;
+  public function getVars() {
+    return $this->vars;
   }
 
 }
