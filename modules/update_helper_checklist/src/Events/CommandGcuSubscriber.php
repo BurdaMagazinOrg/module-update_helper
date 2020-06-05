@@ -113,7 +113,6 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   public function onExecute(CommandExecuteEvent $execute_event) {
     $vars = $execute_event->getVars();
 
-    var_dump($vars);
     $module_path = $this->moduleHandler->getModule($vars['module'])->getPath();
     $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
     $update_versions = $this->updateChecklist->getUpdateVersions($vars['module']);

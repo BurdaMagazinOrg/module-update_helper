@@ -7,6 +7,3 @@ services:
     arguments: ['@update_helper_checklist.update_checklist']
     tags:
       - { name: event_subscriber }
-  update_helper_checklist.console_interaction:
-    class: Drupal\update_helper_checklist\ConsoleInteraction
-    arguments: ['@update_helper_checklist.update_checklist']
