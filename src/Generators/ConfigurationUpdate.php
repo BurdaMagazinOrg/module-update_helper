@@ -157,9 +157,6 @@ class ConfigurationUpdate extends BaseGenerator {
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_INTERACT, $event);
 
     $this->collectVars($input, $output, $event->getQuestions());
-  }
-
-  protected function execute(InputInterface $input, OutputInterface $output) {
 
     // Get patch data and save it into file.
     $patch_data = $this->configHandler->generatePatchFile($this->vars['include-modules'], $this->vars['from-active']);
@@ -193,12 +190,7 @@ class ConfigurationUpdate extends BaseGenerator {
     else {
       $output->write('There are no configuration changes that should be exported for the update.', TRUE);
     }
-
-
-
-    return parent::execute($input, $output);
   }
-
 
   /**
    * Get installed non_core extensions.
