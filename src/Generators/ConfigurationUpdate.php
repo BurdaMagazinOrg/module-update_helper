@@ -83,7 +83,6 @@ class ConfigurationUpdate extends BaseGenerator {
   protected function interact(InputInterface $input, OutputInterface $output) {
 
     $extensions = $this->getExtensions();
-    $defaultExtension = NULL;
 
     $questions['module'] = new Question('Enter a module/profile');
     $questions['module']->setAutocompleterValues(array_keys($extensions));
@@ -148,7 +147,7 @@ class ConfigurationUpdate extends BaseGenerator {
     $vars = $this->collectVars($input, $output, $questions);
 
     // Get additional options provided by other modules.
-    $event = new CommandInteractEvent($this, $input, $output, $vars);
+    $event = new CommandInteractEvent($vars);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_INTERACT, $event);
 
     $vars = $this->collectVars($input, $output, $event->getQuestions());
@@ -162,15 +161,9 @@ class ConfigurationUpdate extends BaseGenerator {
       $event = new CommandExecuteEvent($vars);
       $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
 
-
       foreach ($event->getTemplatePaths() as $path) {
         $this->getHelper('dcg_renderer')->addPath($path);
-
       }
-
-
-
-
 
       $this->assets = $event->getAssets();
 

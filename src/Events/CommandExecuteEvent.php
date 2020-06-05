@@ -26,6 +26,11 @@ class CommandExecuteEvent extends Event {
    */
   protected $assets = [];
 
+  /**
+   * Paths to look for template files.
+   *
+   * @var array
+   */
   protected $templatePaths = [];
 
   /**
@@ -71,11 +76,25 @@ class CommandExecuteEvent extends Event {
     return $this;
   }
 
+  /**
+   * Add a template path.
+   *
+   * @param string $template_path
+   *   The path for templates.
+   *
+   * @return $this
+   */
   public function addTemplatePath($template_path) {
     $this->templatePaths[] = $template_path;
     return $this;
   }
 
+  /**
+   * Get all template paths.
+   *
+   * @return array
+   *   An array of paths.
+   */
   public function getTemplatePaths() {
     return $this->templatePaths;
   }

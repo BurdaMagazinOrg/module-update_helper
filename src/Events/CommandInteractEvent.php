@@ -2,9 +2,6 @@
 
 namespace Drupal\update_helper\Events;
 
-use DrupalCodeGenerator\Command\BaseGenerator;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -52,50 +49,11 @@ class CommandInteractEvent extends Event {
   /**
    * Command interact event constructor.
    *
-   * @param \DrupalCodeGenerator\Command\BaseGenerator $command
-   *   Command that for which this event is triggered.
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   Input interface.
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   Output interface.
-   * @param array $questions
-   *   Te interact questions.
+   * @param array $vars
+   *   The collected vars.
    */
-  public function __construct(BaseGenerator $command, InputInterface $input, OutputInterface $output, array $vars) {
-    $this->command = $command;
-    $this->input = $input;
-    $this->output = $output;
+  public function __construct(array $vars) {
     $this->vars = $vars;
-  }
-
-  /**
-   * Command that for what this event is triggered.
-   *
-   * @return \DrupalCodeGenerator\Command\BaseGenerator
-   *   Returns command.
-   */
-  public function getCommand() {
-    return $this->command;
-  }
-
-  /**
-   * Get console command input.
-   *
-   * @return \Symfony\Component\Console\Input\InputInterface
-   *   Input interface for command.
-   */
-  public function getInput() {
-    return $this->input;
-  }
-
-  /**
-   * Get console command output.
-   *
-   * @return \Symfony\Component\Console\Output\OutputInterface
-   *   Output interface for command.
-   */
-  public function getOutput() {
-    return $this->output;
   }
 
   /**
@@ -109,20 +67,26 @@ class CommandInteractEvent extends Event {
   }
 
   /**
-   * The command questions.
+   * Set the questions to ask.
+   *
+   * @param array $questions
+   *   The array of questions.
+   *
+   * @return $this
+   */
+  public function setQuestions(array $questions) {
+    $this->questions = $questions;
+    return $this;
+  }
+
+  /**
+   * Get the collected vars.
    *
    * @return array
-   *   All the questions.
+   *   All the collected vars.
    */
   public function getVars() {
     return $this->vars;
   }
 
-  public function setVars(array $vars) {
-    $this->vars = $vars;
-  }
-
-  public function setQuestions($questions) {
-    $this->questions = $questions;
-  }
 }
