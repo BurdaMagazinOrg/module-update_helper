@@ -2,7 +2,9 @@
 
 namespace Drupal\update_helper\Events;
 
-use Drupal\update_helper\Generator\ConfigurationUpdateHookGenerator;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\update_helper\Generators\ConfigurationUpdate;
+use DrupalCodeGenerator\Asset;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -11,20 +13,20 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class CommandSubscriber implements EventSubscriberInterface {
 
   /**
-   * Update hook generator for configuration update command.
+   * The module handler service.
    *
-   * @var \Drupal\update_helper\Generator\ConfigurationUpdateHookGenerator
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
-  protected $generator;
+  protected $moduleHandler;
 
   /**
    * Command subscriber class.
    *
-   * @param \Drupal\update_helper\Generator\ConfigurationUpdateHookGenerator $generator
-   *   Update hook generator service.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
    */
-  public function __construct(ConfigurationUpdateHookGenerator $generator) {
-    $this->generator = $generator;
+  public function __construct(ModuleHandlerInterface $module_handler) {
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -45,21 +47,26 @@ class CommandSubscriber implements EventSubscriberInterface {
    *   Command execute event.
    */
   public function onExecute(CommandExecuteEvent $execute_event) {
-    // If command that triggered this event wasn't successful, then nothing
-    // should be created.
-    if (!$execute_event->getSuccessful()) {
-      return;
-    }
+    $vars = $execute_event->getVars();
 
-    // Get options provided by command as options or in interactive mode.
-    $options = $execute_event->getOptions();
+    $module_path = $this->moduleHandler->getModule($vars['module'])
+      ->getPath();
+    $update_file = $module_path . '/' . $vars['module'] . '.install';
 
-    // Generate update hook entry.
-    $this->generator->generate(
-      $execute_event->getModule(),
-      $execute_event->getUpdateNumber(),
-      $options['description']
-    );
+    $vars['update_hook_name'] = ConfigurationUpdate::getUpdateFunctionName($vars['module'], $vars['update-n']);
+    $vars['file_exists'] = file_exists($update_file);
+
+    // Add the update hook template.
+    $asset = (new Asset())->type('file')
+      ->vars($vars)
+      ->path($update_file)
+      ->action('append')
+      ->template('configuration_update_hook.php.twig');
+
+    $execute_event->addAsset($asset);
+
+    $execute_event->addTemplatePath(__DIR__ . '/../../templates');
+
   }
 
 }

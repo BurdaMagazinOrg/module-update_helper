@@ -2,8 +2,7 @@
 
 namespace Drupal\update_helper\Events;
 
-use Drupal\Console\Core\Command\Command;
-use DrupalCodeGenerator\Command\BaseGenerator;
+use DrupalCodeGenerator\Asset;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -14,60 +13,71 @@ use Symfony\Component\EventDispatcher\Event;
 class CommandExecuteEvent extends Event {
 
   /**
-   * Console command for this event.
-   *
-   * @var \Drupal\Console\Core\Command\Command
-   */
-  protected $command;
-
-
-
-  /**
    * The collected variables.
    *
    * @var array
    */
   protected $vars;
 
+  /**
+   * Assets that should be generated.
+   *
+   * @var array
+   */
+  protected $assets = [];
+
+  protected $templatePaths = [];
 
   /**
    * Command execute event constructor.
    *
-   * @param \Drupal\Console\Core\Command\Command $command
-   *   Command that for which this event is triggered.
-   * @param string $module
-   *   Module name.
-   * @param int $update_number
-   *   Update number.
-   * @param array $command_options
-   *   Command options.
-   * @param bool $successful
-   *   Successful execution of command.
+   * @param array $vars
+   *   The collected vars.
    */
-  public function __construct(BaseGenerator $command, array $vars) {
-    $this->command = $command;
+  public function __construct(array $vars) {
     $this->vars = $vars;
-
   }
 
   /**
-   * Get drupal console command.
-   *
-   * @return \Drupal\Console\Core\Command\Command
-   *   Returns drupal console command.
-   */
-  public function getCommand() {
-    return $this->command;
-  }
-
-  /**
-   * The command questions.
+   * Get the collected vars.
    *
    * @return array
-   *   All the questions.
+   *   All the collected vars.
    */
   public function getVars() {
     return $this->vars;
+  }
+
+  /**
+   * Get the assets that should be generated.
+   *
+   * @return array
+   *   Assets that should be generated.
+   */
+  public function getAssets() {
+    return $this->assets;
+  }
+
+  /**
+   * Add an asset.
+   *
+   * @param \DrupalCodeGenerator\Asset $asset
+   *   The asset to add to the array.
+   *
+   * @return $this
+   */
+  public function addAsset(Asset $asset) {
+    $this->assets[] = $asset;
+    return $this;
+  }
+
+  public function addTemplatePath($template_path) {
+    $this->templatePaths[] = $template_path;
+    return $this;
+  }
+
+  public function getTemplatePaths() {
+    return $this->templatePaths;
   }
 
 }

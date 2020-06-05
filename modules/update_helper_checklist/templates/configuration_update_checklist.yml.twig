@@ -6,7 +6,7 @@
 {% endif %}
     {{ update_hook_name }}:
         '#title': '{{ checklist_title }}'
-        '#description': '<p>{{ checklist_description }}</p>'
-        '#description_successful': '<p>{{ checklist_success }}</p>'
-        '#description_failed': '<p><strong>{{ checklist_failed }}</strong><p>'
+        '#description': '<p>{{ update_description }}</p>'
+        '#description_successful': '<p>{{ success_message }}</p>'
+        '#description_failed': '<p><strong>{{ failure_message }}</strong><p>'
 {% endblock %}

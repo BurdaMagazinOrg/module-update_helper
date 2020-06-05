@@ -28,7 +28,6 @@
     },
     "require-dev": {
         "drupal/checklistapi": "~1.0",
-        "drupal/console": "~1.2",
         "drush/drush": "~10.2"
     }
 }

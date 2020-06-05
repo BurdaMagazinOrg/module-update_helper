@@ -38,11 +38,6 @@ class ConfigurationUpdate extends BaseGenerator {
   protected $alias = 'config-update';
 
   /**
-   * {@inheritdoc}
-   */
-  protected $templatePath = __DIR__;
-
-  /**
    * The module extension list service.
    *
    * @var \Drupal\Core\Extension\ModuleExtensionList
@@ -156,36 +151,34 @@ class ConfigurationUpdate extends BaseGenerator {
     $event = new CommandInteractEvent($this, $input, $output, $vars);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_INTERACT, $event);
 
-    $this->collectVars($input, $output, $event->getQuestions());
+    $vars = $this->collectVars($input, $output, $event->getQuestions());
 
     // Get patch data and save it into file.
     $patch_data = $this->configHandler->generatePatchFile($this->vars['include-modules'], $this->vars['from-active']);
 
     if (!empty($patch_data)) {
-      $patch_file_path = $this->configHandler->getPatchFile($this->vars['module'], $this->getUpdateFunctionName($this->vars['module'], $this->vars['update-n']), TRUE);
-
-      // Add the patchfile.
-      $this->addFile()
-        ->path($patch_file_path)
-        ->content($patch_data);
-
-      $module_path = $this->moduleHandler->getModule($this->vars['module'])
-        ->getPath();
-      $update_file = $module_path . '/' . $this->vars['module'] . '.install';
-
-      $this->vars['update_hook_name'] = $this->getUpdateFunctionName($this->vars['module'], $this->vars['update-n']);
-      $this->vars['file_exists'] = file_exists($update_file);
-
-      // Add the update hook template.
-      $this->addFile()
-        ->path($update_file)
-        ->action('append')
-        ->template('configuration_update_hook.php.twig');
 
       // Get additional options provided by other modules.
-      $event = new CommandExecuteEvent($this, $this->vars);
+      $event = new CommandExecuteEvent($vars);
       $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
 
+
+      foreach ($event->getTemplatePaths() as $path) {
+        $this->getHelper('dcg_renderer')->addPath($path);
+
+      }
+
+
+
+
+
+      $this->assets = $event->getAssets();
+
+      $patch_file_path = $this->configHandler->getPatchFile($this->vars['module'], static::getUpdateFunctionName($this->vars['module'], $this->vars['update-n']), TRUE);
+
+      // Add the patchfile.
+      $this->addFile($patch_file_path)
+        ->content($patch_data);
     }
     else {
       $output->write('There are no configuration changes that should be exported for the update.', TRUE);
@@ -219,7 +212,7 @@ class ConfigurationUpdate extends BaseGenerator {
    * @return string
    *   Returns update hook function name.
    */
-  protected function getUpdateFunctionName($module_name, $update_number) {
+  public static function getUpdateFunctionName($module_name, $update_number) {
     return $module_name . '_update_' . $update_number;
   }
 
