@@ -28,5 +28,12 @@
     "require-dev": {
         "drupal/checklistapi": "~1.0",
         "drupal/console": "~1.2"
+    },
+    "extra": {
+        "patches": {
+            "drupal/core": {
+                "PhpUnitCompatibilityPhpUnit8ClassWriter cannot detect PHPUnit source directory when running PHPStan check": "https://www.drupal.org/files/issues/2020-06-08/3143604-8_0.patch"
+            }
+        }
     }
 }
