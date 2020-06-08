@@ -30,7 +30,7 @@ class ConfigurationUpdate extends BaseGenerator {
   /**
    * {@inheritdoc}
    */
-  protected $description = 'Generates a composer.json file';
+  protected $description = 'Generate a configuration update';
 
   /**
    * {@inheritdoc}
