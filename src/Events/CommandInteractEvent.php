@@ -12,27 +12,6 @@ use Symfony\Component\EventDispatcher\Event;
 class CommandInteractEvent extends Event {
 
   /**
-   * Console command for this event.
-   *
-   * @var \DrupalCodeGenerator\Command\BaseGenerator
-   */
-  protected $command;
-
-  /**
-   * Input interface for command.
-   *
-   * @var \Symfony\Component\Console\Input\InputInterface
-   */
-  protected $input;
-
-  /**
-   * Output interface.
-   *
-   * @var \Symfony\Component\Console\Output\OutputInterface
-   */
-  protected $output;
-
-  /**
    * The command questions.
    *
    * @var array
