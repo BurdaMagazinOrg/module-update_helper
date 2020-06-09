@@ -23,7 +23,7 @@ env:
     - PATH="$PATH:$HOME/.composer/vendor/bin"
 
 before_install:
-  - composer global require thunder/drupal-testing
+  - composer global require thunder/drupal-testing:dev-test/drupal8.9
 
 before_script:
   - phpenv config-rm xdebug.ini
