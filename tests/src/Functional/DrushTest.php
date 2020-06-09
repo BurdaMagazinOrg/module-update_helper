@@ -39,7 +39,7 @@ class DrushTest extends BrowserTestBase {
   protected static $modules = [
     'update_helper',
     'node',
-    'test_node_config'
+    'test_node_config',
   ];
 
   /**
@@ -82,7 +82,7 @@ class DrushTest extends BrowserTestBase {
       'update-n' => 9001,
       'description' => 'Some description',
       'include-modules' => ['test_node_config'],
-      'from-active' => TRUE
+      'from-active' => TRUE,
     ]);
     $optionsExample['yes'] = NULL;
 
