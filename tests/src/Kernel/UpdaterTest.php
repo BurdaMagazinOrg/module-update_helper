@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\update_helper\Kernel;
 
+use Drupal\Core\Serialization\Yaml;
 use Drupal\KernelTests\KernelTestBase;
 
 /**
@@ -44,6 +45,7 @@ class UpdaterTest extends KernelTestBase {
   protected static $modules = [
     'config_update',
     'update_helper',
+    'update_helper_test',
     'system',
     'user',
     'text',
@@ -100,14 +102,41 @@ class UpdaterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
+  protected function setUpFilesystem() {
+    // Use a real file system and not VFS so that we can create a fake module.
+    // See \Drupal\KernelTests\Core\File\FileTestBase::setUpFilesystem().
+    $public_file_directory = $this->siteDirectory . '/files';
+
+    require_once 'core/includes/file.inc';
+
+    mkdir($this->siteDirectory, 0775);
+    mkdir($this->siteDirectory . '/files', 0775);
+    mkdir($this->siteDirectory . '/files/config/sync', 0775, TRUE);
+
+    $this->setSetting('file_public_path', $public_file_directory);
+    $this->setSetting('config_sync_directory', $this->siteDirectory . '/files/config/sync');
+
+    // Make a module for testing.
+    $module_dir = $this->siteDirectory . '/modules/update_helper_test';
+    mkdir($module_dir, 0755, TRUE);
+    $info = [
+      'name' => 'Update Helper test module',
+      'type' => 'module',
+      'core_version_requirement' => '*',
+      'package' => 'Testing',
+    ];
+    file_put_contents($module_dir . '/update_helper_test.info.yml', Yaml::encode($info));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
 
     $this->moduleHandler = \Drupal::moduleHandler();
-    $this->configDir = $this->moduleHandler->getModule('update_helper')->getPath() . '/config';
-
-    mkdir($this->configDir . '/install', 0755, TRUE);
-
+    $module_dir = $this->moduleHandler->getModule('update_helper_test')->getPath();
+    mkdir($module_dir . '/config/install', 0755, TRUE);
     // Prepare config file for testing of configuration import.
     $tour_config = [
       'id' => 'tour-update-helper-test',
@@ -128,20 +157,18 @@ class UpdaterTest extends KernelTestBase {
       ],
     ];
 
-    /** @var \Drupal\Core\Serialization\Yaml $yml_serializer */
-    $yml_serializer = \Drupal::service('serialization.yaml');
-    file_put_contents($this->configDir . '/install/tour.tour.tour-update-helper-test.yml', $yml_serializer::encode($tour_config));
+    file_put_contents($module_dir . '/config/install/tour.tour.tour-update-helper-test.yml', Yaml::encode($tour_config));
 
     /** @var \Drupal\update_helper\ConfigHandler $config_handler */
     $config_handler = \Drupal::service('update_helper.config_handler');
 
     // Create update configuration for testExecuteUpdate.
-    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater', TRUE);
-    file_put_contents($patch_file_path, $yml_serializer::encode($this->getUpdateDefinition()));
+    $patch_file_path = $config_handler->getPatchFile('update_helper_test', 'test_updater', TRUE);
+    file_put_contents($patch_file_path, Yaml::encode($this->getUpdateDefinition()));
 
     // Create update configuration for testOnlyDeleteUpdate.
-    $patch_file_path = $config_handler->getPatchFile('update_helper', 'test_updater_only_delete', TRUE);
-    file_put_contents($patch_file_path, $yml_serializer::encode(
+    $patch_file_path = $config_handler->getPatchFile('update_helper_test', 'test_updater_only_delete', TRUE);
+    file_put_contents($patch_file_path, Yaml::encode(
       [
         'field.storage.node.body' => [
           'expected_config' => [],
@@ -153,26 +180,6 @@ class UpdaterTest extends KernelTestBase {
         ],
       ]
     ));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function tearDown() {
-    $config_dir = $this->moduleHandler->getModule('update_helper')->getPath() . '/config';
-
-    // Remove import file.
-    unlink($config_dir . '/install/tour.tour.tour-update-helper-test.yml');
-    rmdir($config_dir . '/install');
-
-    // Remove configuration update definition.
-    unlink($config_dir . '/update/test_updater.yml');
-    unlink($config_dir . '/update/test_updater_only_delete.yml');
-    rmdir($config_dir . '/update');
-
-    rmdir($config_dir);
-
-    parent::tearDown();
   }
 
   /**
@@ -209,7 +216,7 @@ class UpdaterTest extends KernelTestBase {
     // Ensure that configuration had new values.
     $this->assertEquals('text', $config_factory->get('field.storage.node.body')->get('lost_config'));
 
-    $update_helper->executeUpdate('update_helper', 'test_updater');
+    $update_helper->executeUpdate('update_helper_test', 'test_updater');
 
     $this->assertEquals($expected_config_data, $config_factory->get('field.storage.node.body')->get());
     $this->assertTrue($this->moduleHandler->moduleExists('help'), 'Module "help" should be installed.');
@@ -239,7 +246,7 @@ class UpdaterTest extends KernelTestBase {
     $this->assertEquals('text', $this->config('field.storage.node.body')->get('lost_config'));
 
     // Execute update and validate new state.
-    $update_helper->executeUpdate('update_helper', 'test_updater_only_delete');
+    $update_helper->executeUpdate('update_helper_test', 'test_updater_only_delete');
     $this->assertEquals($expected_config_data, $this->config('field.storage.node.body')->get());
   }
 
