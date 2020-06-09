@@ -2,8 +2,10 @@
 
 namespace Drupal\Tests\update_helper\Kernel;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\update_helper\ConfigHandler;
+use Drush\TestTraits\DrushTestTrait;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -14,6 +16,7 @@ use Symfony\Component\Filesystem\Filesystem;
  * @covers \Drupal\update_helper\ConfigHandler
  */
 class ConfigHandlerTest extends KernelTestBase {
+  use DrushTestTrait;
 
   /**
    * An array of config object names that are excluded from schema checking.
@@ -39,12 +42,12 @@ class ConfigHandlerTest extends KernelTestBase {
   ];
 
   /**
-   * Returns update defintion data.
+   * Returns update definition data.
    *
    * @return string
    *   Update definition Yaml string.
    */
-  protected function getUpdateDefinition() {
+  public static function getUpdateDefinition() {
     return <<<EOF
 field.storage.node.body:
   expected_config:
@@ -149,9 +152,6 @@ EOF;
     /** @var \Drupal\update_helper\ConfigHandler $configHandler */
     $configHandler = \Drupal::service('update_helper.config_handler');
 
-    /** @var \Drupal\Component\Serialization\SerializationInterface $yamlSerializer */
-    $yamlSerializer = \Drupal::service('serialization.yaml');
-
     /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
     $extensionStorage = \Drupal::service('config_update.extension_storage');
     $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
@@ -170,7 +170,7 @@ EOF;
     $config->setData($configData)->save(TRUE);
 
     // Check file configuration before export.
-    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+    $fileData = Yaml::decode(file_get_contents($configFilePath));
     $this->assertEqual('text_with_summary', $fileData['type']);
     $this->assertEqual([], $fileData['settings']);
 
@@ -192,7 +192,7 @@ EOF;
     $this->assertEqual($expected, $data);
 
     // Check newly exported configuration.
-    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+    $fileData = Yaml::decode(file_get_contents($configFilePath));
 
     $this->assertEqual('text', $fileData['type']);
     $this->assertEqual(['max_length' => 321], $fileData['settings']);
