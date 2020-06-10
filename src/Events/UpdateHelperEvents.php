@@ -10,11 +10,6 @@ namespace Drupal\update_helper\Events;
 final class UpdateHelperEvents {
 
   /**
-   * Event dispatched when command configure is executed.
-   */
-  const COMMAND_GCU_CONFIGURE = 'update_helper.command.gcu.configure';
-
-  /**
    * Event dispatched when command interact is executed.
    */
   const COMMAND_GCU_INTERACT = 'update_helper.command.gcu.interact';

@@ -2,14 +2,14 @@
 
 namespace Drupal\update_helper_checklist\Events;
 
-use Drupal\Console\Utils\TranslatorManager;
-use Drupal\update_helper\Events\CommandConfigureEvent;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\update_helper\Events\CommandExecuteEvent;
 use Drupal\update_helper\Events\UpdateHelperEvents;
 use Drupal\update_helper\Events\CommandInteractEvent;
-use Drupal\update_helper_checklist\Generator\ConfigurationUpdateGenerator;
+use Drupal\update_helper\Generators\ConfigurationUpdate;
 use Drupal\update_helper_checklist\UpdateChecklist;
-use Symfony\Component\Console\Input\InputOption;
+use DrupalCodeGenerator\Asset;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -22,42 +22,28 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    *
    * @var string
    */
-  protected static $updateVersionName = 'update-version';
+  protected static $updateVersionName = 'update_version';
 
   /**
    * Key for update description.
    *
    * @var string
    */
-  protected static $updateDescription = 'update-description';
+  protected static $updateDescription = 'update_description';
 
   /**
    * Key for success message command option.
    *
    * @var string
    */
-  protected static $successMessageName = 'success-message';
+  protected static $successMessageName = 'success_message';
 
   /**
    * Key for failure message command option.
    *
    * @var string
    */
-  protected static $failureMessageName = 'failure-message';
-
-  /**
-   * Checklist entry generator for configuration update command.
-   *
-   * @var \Drupal\update_helper_checklist\Generator\ConfigurationUpdateGenerator
-   */
-  protected $generator;
-
-  /**
-   * Console translator manager service.
-   *
-   * @var \Drupal\Console\Utils\TranslatorManager
-   */
-  protected $translatorManager;
+  protected static $failureMessageName = 'failure_message';
 
   /**
    * Update checklist service.
@@ -67,23 +53,23 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   protected $updateChecklist;
 
   /**
+   * Drupal\Core\Extension\ModuleHandler definition.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  protected $moduleHandler;
+
+  /**
    * CommandGcuSubscriber constructor.
    *
-   * @param \Drupal\update_helper_checklist\Generator\ConfigurationUpdateGenerator $generator
-   *   Code generator service.
-   * @param \Drupal\Console\Utils\TranslatorManager $translator_manager
-   *   Translator manager service.
    * @param \Drupal\update_helper_checklist\UpdateChecklist $update_checklist
    *   Update checklist service.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
    */
-  public function __construct(ConfigurationUpdateGenerator $generator, TranslatorManager $translator_manager, UpdateChecklist $update_checklist) {
-    $this->generator = $generator;
-    $this->translatorManager = $translator_manager;
+  public function __construct(UpdateChecklist $update_checklist, ModuleHandlerInterface $module_handler) {
     $this->updateChecklist = $update_checklist;
-
-    // Init required options for this subscriber to work.
-    $translator_manager->addResourceTranslationsByExtension('update_helper_checklist', 'module');
-    $this->generator->addSkeletonDir(__DIR__ . '/../../templates/console');
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -91,9 +77,6 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
-      UpdateHelperEvents::COMMAND_GCU_CONFIGURE => [
-        ['onConfigure', 10],
-      ],
       UpdateHelperEvents::COMMAND_GCU_INTERACT => [
         ['onInteract', 10],
       ],
@@ -104,103 +87,21 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Get options for "generate:configuration:update" relevant for checklist.
-   *
-   * @param \Drupal\update_helper\Events\CommandConfigureEvent $configure_event
-   *   Command options event.
-   */
-  public function onConfigure(CommandConfigureEvent $configure_event) {
-    $configure_event->addOption(
-      static::$updateVersionName,
-      NULL,
-      InputOption::VALUE_OPTIONAL,
-      $configure_event->getCommand()
-        ->trans('commands.generate.configuration.update.checklist.options.update-version'),
-      ''
-    );
-
-    $configure_event->addOption(
-      static::$updateDescription,
-      NULL,
-      InputOption::VALUE_REQUIRED,
-      $configure_event->getCommand()
-        ->trans('commands.generate.configuration.update.checklist.options.update-description')
-    );
-
-    $configure_event->addOption(
-      static::$successMessageName,
-      NULL,
-      InputOption::VALUE_REQUIRED,
-      $configure_event->getCommand()
-        ->trans('commands.generate.configuration.update.checklist.options.success-message')
-    );
-
-    $configure_event->addOption(
-      static::$failureMessageName,
-      NULL,
-      InputOption::VALUE_REQUIRED,
-      $configure_event->getCommand()
-        ->trans('commands.generate.configuration.update.checklist.options.failure-message')
-    );
-  }
-
-  /**
    * Handle on interactive mode for getting command options.
    *
    * @param \Drupal\update_helper\Events\CommandInteractEvent $interact_event
    *   Event.
    */
   public function onInteract(CommandInteractEvent $interact_event) {
-    $command = $interact_event->getCommand();
-    $input = $interact_event->getInput();
+    $update_versions = $this->updateChecklist->getUpdateVersions($interact_event->getVars()['module']);
+    // Set internal pointer to end, to get last update version.
+    end($update_versions);
+    $questions[static::$updateVersionName] = new Question('Please enter a update version for checklist collection', (empty($update_versions)) ? '8.x-1.0' : current($update_versions));
+    $questions[static::$updateDescription] = new Question('Please enter a detailed update description that will be used for checklist', 'This configuration update will update site configuration to newly provided configuration');
+    $questions[static::$successMessageName] = new Question('Please enter a detailed update description that will be used for checklist', 'Configuration is successfully updated.');
+    $questions[static::$failureMessageName] = new Question('Please enter a message that will be displayed in checklist entry when the update has failed', 'Update of configuration has failed.');
 
-    /** @var \Drupal\Console\Core\Style\DrupalStyle $output */
-    $output = $interact_event->getOutput();
-
-    $update_version = $input->getOption(static::$updateVersionName);
-    $update_description = $input->getOption(static::$updateDescription);
-    $success_message = $input->getOption(static::$successMessageName);
-    $failure_message = $input->getOption(static::$failureMessageName);
-
-    // Get update version.
-    if (!$update_version) {
-      $update_versions = $this->updateChecklist->getUpdateVersions($input->getOption('module'));
-      // Set internal pointer to end, to get last update version.
-      end($update_versions);
-
-      $update_version = $output->ask(
-        $command->trans('commands.generate.configuration.update.checklist.questions.update-version'),
-        (empty($update_versions)) ? '8.x-1.0' : current($update_versions)
-      );
-      $input->setOption(static::$updateVersionName, $update_version);
-    }
-
-    // Get update description for checklist.
-    if (!$update_description) {
-      $update_description = $output->ask(
-        $command->trans('commands.generate.configuration.update.checklist.questions.update-description'),
-        $command->trans('commands.generate.configuration.update.checklist.defaults.update-description')
-      );
-      $input->setOption(static::$updateDescription, $update_description);
-    }
-
-    // Get success message for checklist.
-    if (!$success_message) {
-      $success_message = $output->ask(
-        $command->trans('commands.generate.configuration.update.checklist.questions.success-message'),
-        $command->trans('commands.generate.configuration.update.checklist.defaults.success-message')
-      );
-      $input->setOption(static::$successMessageName, $success_message);
-    }
-
-    // Get failure message for checklist.
-    if (!$failure_message) {
-      $failure_message = $output->ask(
-        $command->trans('commands.generate.configuration.update.checklist.questions.failure-message'),
-        $command->trans('commands.generate.configuration.update.checklist.defaults.failure-message')
-      );
-      $input->setOption(static::$failureMessageName, $failure_message);
-    }
+    $interact_event->setQuestions($questions);
   }
 
   /**
@@ -210,24 +111,28 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
    *   Event.
    */
   public function onExecute(CommandExecuteEvent $execute_event) {
-    // If command that triggered this event wasn't successful, then nothing
-    // should be created.
-    if (!$execute_event->getSuccessful()) {
-      return;
-    }
+    $vars = $execute_event->getVars();
 
-    // Get options provided by command as options or in interactive mode.
-    $options = $execute_event->getOptions();
+    $module_path = $this->moduleHandler->getModule($vars['module'])->getPath();
+    $checklist_file = $module_path . DIRECTORY_SEPARATOR . UpdateChecklist::$updateChecklistFileName;
+    $update_versions = $this->updateChecklist->getUpdateVersions($vars['module']);
+    end($update_versions);
+    $last_update_version = current($update_versions);
 
-    $this->generator->generate(
-      $execute_event->getModule(),
-      $execute_event->getUpdateNumber(),
-      $options[static::$updateVersionName],
-      $options['description'],
-      $options[static::$updateDescription],
-      $options[static::$successMessageName],
-      $options[static::$failureMessageName]
-    );
+    $vars['update_hook_name'] = ConfigurationUpdate::getUpdateFunctionName($vars['module'], $vars['update-n']);
+    $vars['update_version'] = ($vars[static::$updateVersionName] === $last_update_version) ? '' : $vars[static::$updateVersionName];
+    $vars['file_exists'] = file_exists($checklist_file);
+
+    // Add the update hook template.
+    $asset = (new Asset())->type('file')
+      ->vars($vars)
+      ->path($checklist_file)
+      ->action('append')
+      ->template('configuration_update_checklist.yml.twig');
+
+    $execute_event->addAsset($asset);
+
+    $execute_event->addTemplatePath(__DIR__ . '/../../templates');
   }
 
 }

@@ -2,8 +2,11 @@
 
 namespace Drupal\Tests\update_helper\Kernel;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\update_helper\ConfigHandler;
+use Drush\TestTraits\DrushTestTrait;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Automated tests for ConfigName class.
@@ -13,6 +16,7 @@ use Drupal\update_helper\ConfigHandler;
  * @covers \Drupal\update_helper\ConfigHandler
  */
 class ConfigHandlerTest extends KernelTestBase {
+  use DrushTestTrait;
 
   /**
    * An array of config object names that are excluded from schema checking.
@@ -38,38 +42,41 @@ class ConfigHandlerTest extends KernelTestBase {
   ];
 
   /**
-   * Returns update defintion data.
+   * Returns update definition data.
    *
    * @return string
    *   Update definition Yaml string.
    */
-  protected function getUpdateDefinition() {
-    return 'field.storage.node.body:' . PHP_EOL .
-      '  expected_config:' . PHP_EOL .
-      '    lost_config: text' . PHP_EOL .
-      '    settings:' . PHP_EOL .
-      '      max_length: 123' . PHP_EOL .
-      '    status: false' . PHP_EOL .
-      '    type: text' . PHP_EOL .
-      '  update_actions:' . PHP_EOL .
-      '    delete:' . PHP_EOL .
-      '      lost_config: text' . PHP_EOL .
-      '      settings:' . PHP_EOL .
-      '        max_length: 123' . PHP_EOL .
-      '    add:' . PHP_EOL .
-      '      cardinality: 1' . PHP_EOL .
-      '    change:' . PHP_EOL .
-      '      settings: {  }' . PHP_EOL .
-      '      status: true' . PHP_EOL .
-      '      type: text_with_summary' . PHP_EOL;
+  public static function getUpdateDefinition() {
+    return <<<EOF
+field.storage.node.body:
+  expected_config:
+    lost_config: text
+    settings:
+      max_length: 123
+    status: false
+    type: text
+  update_actions:
+    delete:
+      lost_config: text
+      settings:
+        max_length: 123
+    add:
+      cardinality: 1
+    change:
+      settings: {  }
+      status: true
+      type: text_with_summary
+
+EOF;
   }
 
   /**
-   * Backup of configuration file that is modified during testing.
+   * The sha1 of configuration file that is modified during testing.
    *
    * @var string
    */
-  protected $configFileBackup;
+  protected $startingSha1;
 
   /**
    * {@inheritdoc}
@@ -77,39 +84,31 @@ class ConfigHandlerTest extends KernelTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->configFileBackup = tempnam(sys_get_temp_dir(), 'update_helper_test_');
-
     /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
     $extensionStorage = \Drupal::service('config_update.extension_storage');
-    $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
-
-    $this->assertEqual(TRUE, copy($configFilePath, $this->configFileBackup));
+    $this->startingSha1 = sha1_file($extensionStorage->getFilePath('field.storage.node.body'));
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function tearDown() {
-    $moduleHandler = \Drupal::service('module_handler');
-    $dirName = $moduleHandler->getModule('node')->getPath() . '/config/update';
-    $fileName = 'update_helper__node_test.yml';
+  protected function setUpFilesystem() {
+    // Use a real file system and not VFS so that we can create a fake module.
+    // See \Drupal\KernelTests\Core\File\FileTestBase::setUpFilesystem().
+    $public_file_directory = $this->siteDirectory . '/files';
 
-    if (is_file($dirName . '/' . $fileName)) {
-      unlink($dirName . '/' . $fileName);
-    }
+    require_once 'core/includes/file.inc';
 
-    if (is_dir($dirName)) {
-      rmdir($dirName);
-    }
+    mkdir($this->siteDirectory, 0775);
+    mkdir($this->siteDirectory . '/files', 0775);
+    mkdir($this->siteDirectory . '/files/config/sync', 0775, TRUE);
 
-    /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
-    $extensionStorage = \Drupal::service('config_update.extension_storage');
-    $configFilePath = $extensionStorage->getFilePath('field.storage.node.body');
+    $this->setSetting('file_public_path', $public_file_directory);
+    $this->setSetting('config_sync_directory', $this->siteDirectory . '/files/config/sync');
 
-    $this->assertEqual(TRUE, copy($this->configFileBackup, $configFilePath));
-    unlink($this->configFileBackup);
-
-    parent::tearDown();
+    // Copy the node module so we can modify config for testing.
+    $file_system = new Filesystem();
+    $file_system->mirror('core/modules/node', $this->siteDirectory . '/modules/node');
   }
 
   /**
@@ -143,7 +142,7 @@ class ConfigHandlerTest extends KernelTestBase {
     // Check that configuration file is not changed.
     /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
     $extensionStorage = \Drupal::service('config_update.extension_storage');
-    $this->assertEqual(sha1_file($this->configFileBackup), sha1_file($extensionStorage->getFilePath('field.storage.node.body')));
+    $this->assertEqual($this->startingSha1, sha1_file($extensionStorage->getFilePath('field.storage.node.body')));
   }
 
   /**
@@ -152,9 +151,6 @@ class ConfigHandlerTest extends KernelTestBase {
   public function testGeneratePatchFileWithConfigExport() {
     /** @var \Drupal\update_helper\ConfigHandler $configHandler */
     $configHandler = \Drupal::service('update_helper.config_handler');
-
-    /** @var \Drupal\Component\Serialization\SerializationInterface $yamlSerializer */
-    $yamlSerializer = \Drupal::service('serialization.yaml');
 
     /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
     $extensionStorage = \Drupal::service('config_update.extension_storage');
@@ -174,28 +170,29 @@ class ConfigHandlerTest extends KernelTestBase {
     $config->setData($configData)->save(TRUE);
 
     // Check file configuration before export.
-    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+    $fileData = Yaml::decode(file_get_contents($configFilePath));
     $this->assertEqual('text_with_summary', $fileData['type']);
     $this->assertEqual([], $fileData['settings']);
 
     // Generate patch and export config after configuration change.
     $data = $configHandler->generatePatchFile(['node'], FALSE);
 
-    $this->assertEqual(
-      'field.storage.node.body:' . PHP_EOL .
-      '  expected_config:' . PHP_EOL .
-      '    settings: {  }' . PHP_EOL .
-      '    type: text_with_summary' . PHP_EOL .
-      '  update_actions:' . PHP_EOL .
-      '    change:' . PHP_EOL .
-      '      settings:' . PHP_EOL .
-      '        max_length: 321' . PHP_EOL .
-      '      type: text' . PHP_EOL,
-      $data
-    );
+    $expected = <<<EOF
+field.storage.node.body:
+  expected_config:
+    settings: {  }
+    type: text_with_summary
+  update_actions:
+    change:
+      settings:
+        max_length: 321
+      type: text
+
+EOF;
+    $this->assertEqual($expected, $data);
 
     // Check newly exported configuration.
-    $fileData = $yamlSerializer->decode(file_get_contents($configFilePath));
+    $fileData = Yaml::decode(file_get_contents($configFilePath));
 
     $this->assertEqual('text', $fileData['type']);
     $this->assertEqual(['max_length' => 321], $fileData['settings']);

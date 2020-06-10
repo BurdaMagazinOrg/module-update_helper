@@ -2,7 +2,7 @@
 
 namespace Drupal\update_helper\Events;
 
-use Drupal\Console\Core\Command\Command;
+use DrupalCodeGenerator\Asset;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -13,110 +13,90 @@ use Symfony\Component\EventDispatcher\Event;
 class CommandExecuteEvent extends Event {
 
   /**
-   * Console command for this event.
-   *
-   * @var \Drupal\Console\Core\Command\Command
-   */
-  protected $command;
-
-  /**
-   * Module name.
-   *
-   * @var string
-   */
-  protected $module;
-
-  /**
-   * Update number.
-   *
-   * @var int
-   */
-  protected $updateNumber;
-
-  /**
-   * Command options.
+   * The collected variables.
    *
    * @var array
    */
-  protected $commandOptions;
+  protected $vars;
 
   /**
-   * Flag if execution was successful.
+   * Assets that should be generated.
    *
-   * @var bool
+   * @var array
    */
-  protected $successful;
+  protected $assets = [];
+
+  /**
+   * Paths to look for template files.
+   *
+   * @var array
+   */
+  protected $templatePaths = [];
 
   /**
    * Command execute event constructor.
    *
-   * @param \Drupal\Console\Core\Command\Command $command
-   *   Command that for which this event is triggered.
-   * @param string $module
-   *   Module name.
-   * @param int $update_number
-   *   Update number.
-   * @param array $command_options
-   *   Command options.
-   * @param bool $successful
-   *   Successful execution of command.
+   * @param array $vars
+   *   The collected vars.
    */
-  public function __construct(Command $command, $module, $update_number, array $command_options, $successful) {
-    $this->command = $command;
-    $this->module = $module;
-    $this->updateNumber = $update_number;
-    $this->commandOptions = $command_options;
-    $this->successful = $successful;
+  public function __construct(array $vars) {
+    $this->vars = $vars;
   }
 
   /**
-   * Get drupal console command.
-   *
-   * @return \Drupal\Console\Core\Command\Command
-   *   Returns drupal console command.
-   */
-  public function getCommand() {
-    return $this->command;
-  }
-
-  /**
-   * Get module name.
-   *
-   * @return string
-   *   Returns module name.
-   */
-  public function getModule() {
-    return $this->module;
-  }
-
-  /**
-   * Get update number.
-   *
-   * @return int
-   *   Returns update number.
-   */
-  public function getUpdateNumber() {
-    return $this->updateNumber;
-  }
-
-  /**
-   * Get options.
+   * Get the collected vars.
    *
    * @return array
-   *   Returns options.
+   *   All the collected vars.
    */
-  public function getOptions() {
-    return $this->commandOptions;
+  public function getVars() {
+    return $this->vars;
   }
 
   /**
-   * Returns is command execution successful.
+   * Get the assets that should be generated.
    *
-   * @return bool
-   *   Returns status of command execution.
+   * @return array
+   *   Assets that should be generated.
    */
-  public function getSuccessful() {
-    return $this->successful;
+  public function getAssets() {
+    return $this->assets;
+  }
+
+  /**
+   * Add an asset.
+   *
+   * @param \DrupalCodeGenerator\Asset $asset
+   *   The asset to add to the array.
+   *
+   * @return $this
+   */
+  public function addAsset(Asset $asset) {
+    $this->assets[] = $asset;
+    return $this;
+  }
+
+  /**
+   * Add a template path.
+   *
+   * @param string $template_path
+   *   The path for templates.
+   *
+   * @return $this
+   */
+  public function addTemplatePath($template_path) {
+    $this->templatePaths[] = $template_path;
+    return $this;
+  }
+
+  /**
+   * Get all template paths.
+   *
+   * @return array
+   *   An array of paths.
+   */
+  public function getTemplatePaths() {
+    return $this->templatePaths;
   }
 
 }

@@ -7,13 +7,8 @@ parameters:
     - '#Plugin definitions cannot be altered.#'
     - '#Missing cache backend declaration for performance.#'
     - '#Plugin manager has cache backend specified but does not declare cache tags.#'
-    #TODO: Remove when https://www.drupal.org/project/drupal/issues/2367933 is fixed.
-    - '#Call to deprecated function entity_get_display().#'
-    - '#Call to deprecated function entity_get_form_display().#'
-    #TODO: Remove when https://www.drupal.org/project/drupal/issues/2869573 is fixed.
-    - '#Call to deprecated method prepareLegacyRequest\(\) of class Drupal\\Core\\DrupalKernel.#'
-    #TODO: Remove when Drush 8 support is dropped.
-    - '#Call to deprecated function drush_log().#'
+    #TODO: Remove when https://www.drupal.org/project/drupal/issues/3055198 is fixed.
+    - '#Class [a-zA-Z0-9\\_]+ extends deprecated class Symfony\\Component\\EventDispatcher\\Event:\ssince Symfony 4\.3, use "Symfony\\Contracts\\EventDispatcher\\Event" instead#'
 includes:
   - ./vendor/mglaman/phpstan-drupal/extension.neon
   - ./vendor/phpstan/phpstan-deprecation-rules/rules.neon

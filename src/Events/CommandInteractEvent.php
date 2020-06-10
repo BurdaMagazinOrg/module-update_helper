@@ -2,9 +2,6 @@
 
 namespace Drupal\update_helper\Events;
 
-use Drupal\Console\Core\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -15,70 +12,60 @@ use Symfony\Component\EventDispatcher\Event;
 class CommandInteractEvent extends Event {
 
   /**
-   * Console command for this event.
+   * The command questions.
    *
-   * @var \Drupal\Console\Core\Command\Command
+   * @var array
    */
-  protected $command;
+  protected $questions = [];
 
   /**
-   * Input interface for command.
+   * The collected variables.
    *
-   * @var \Symfony\Component\Console\Input\InputInterface
+   * @var array
    */
-  protected $input;
-
-  /**
-   * Output interface.
-   *
-   * @var \Symfony\Component\Console\Output\OutputInterface
-   */
-  protected $output;
+  protected $vars;
 
   /**
    * Command interact event constructor.
    *
-   * @param \Drupal\Console\Core\Command\Command $command
-   *   Command that for which this event is triggered.
-   * @param \Symfony\Component\Console\Input\InputInterface $input
-   *   Input interface.
-   * @param \Symfony\Component\Console\Output\OutputInterface $output
-   *   Output interface.
+   * @param array $vars
+   *   The collected vars.
    */
-  public function __construct(Command $command, InputInterface $input, OutputInterface $output) {
-    $this->command = $command;
-    $this->input = $input;
-    $this->output = $output;
+  public function __construct(array $vars) {
+    $this->vars = $vars;
   }
 
   /**
-   * Command that for what this event is triggered.
+   * The command questions.
    *
-   * @return \Drupal\Console\Core\Command\Command
-   *   Returns command.
+   * @return array
+   *   All the questions.
    */
-  public function getCommand() {
-    return $this->command;
+  public function getQuestions() {
+    return $this->questions;
   }
 
   /**
-   * Get console command input.
+   * Set the questions to ask.
    *
-   * @return \Symfony\Component\Console\Input\InputInterface
-   *   Input interface for command.
+   * @param array $questions
+   *   The array of questions.
+   *
+   * @return $this
    */
-  public function getInput() {
-    return $this->input;
+  public function setQuestions(array $questions) {
+    $this->questions = $questions;
+    return $this;
   }
 
   /**
-   * Get console command output.
+   * Get the collected vars.
    *
-   * @return \Symfony\Component\Console\Output\OutputInterface
-   *   Output interface for command.
+   * @return array
+   *   All the collected vars.
    */
-  public function getOutput() {
-    return $this->output;
+  public function getVars() {
+    return $this->vars;
   }
 
 }
