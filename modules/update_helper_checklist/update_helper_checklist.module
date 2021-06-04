@@ -40,6 +40,7 @@ function update_helper_checklist_checklistapi_checklist_info() {
 function _update_helper_checklist_checklistapi_checklist_items() {
   /** @var \Drupal\Core\Extension\ModuleHandler $module_handler */
   $module_handler = \Drupal::service('module_handler');
+  $updateHelper = \Drupal::service('update_helper.updater');
 
   $module_directories = $module_handler->getModuleDirectories();
 
@@ -58,6 +59,8 @@ function _update_helper_checklist_checklistapi_checklist_items() {
       $version_updates = [];
       foreach ($updates as $update_key => $update) {
         if (is_array($update)) {
+          $neededModules = $updateHelper->checkExpectedModules($module_name, $update_key);
+          if(!empty($neededModules)) continue;
           // Change update key to contain module name.
           $update_key = str_replace('.', '_', $module_name . ':' . $update_key);
           $entry = Update::load($update_key);
