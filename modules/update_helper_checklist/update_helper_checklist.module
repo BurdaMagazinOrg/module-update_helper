@@ -141,7 +141,17 @@ function update_helper_checklist_modules_installed(array $modules) {
  * Implements hook_toolbar().
  */
 function update_helper_checklist_toolbar() {
-  $user = \Drupal::currentUser();
+  $items['update_helper_checklist'] = [
+    '#cache' => [
+      'contexts' => [
+        'user.permissions',
+      ],
+    ],
+  ];
+
+  if (!\Drupal::currentUser()->hasPermission('view update_helper_checklist checklistapi checklist')) {
+    return $items;
+  }
 
   /** @var Drupal\checklistapi\ChecklistapiChecklist $checklist */
   $checklist = checklistapi_checklist_load('update_helper_checklist');
@@ -163,7 +173,7 @@ function update_helper_checklist_toolbar() {
     $state_storage->setChecklistId($checklist->id)->getSavedProgress()
   );
 
-  if ($checklist->getPercentComplete() != 100 && $user->hasPermission('view update_helper_checklist checklistapi checklist')) {
+  if ($checklist->getPercentComplete() < 100) {
     $items['update_helper_checklist'] += [
       '#type' => 'toolbar_item',
       'tab' => [
