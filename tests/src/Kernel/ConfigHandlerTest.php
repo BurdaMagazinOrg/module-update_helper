@@ -142,7 +142,7 @@ EOF;
     // Check that configuration file is not changed.
     /** @var \Drupal\Core\Config\FileStorage $extensionStorage */
     $extensionStorage = \Drupal::service('config_update.extension_storage');
-    $this->assertEqual($this->startingSha1, sha1_file($extensionStorage->getFilePath('field.storage.node.body')));
+    $this->assertSame($this->startingSha1, sha1_file($extensionStorage->getFilePath('field.storage.node.body')));
   }
 
   /**
@@ -171,8 +171,8 @@ EOF;
 
     // Check file configuration before export.
     $fileData = Yaml::decode(file_get_contents($configFilePath));
-    $this->assertEqual('text_with_summary', $fileData['type']);
-    $this->assertEqual([], $fileData['settings']);
+    $this->assertSame('text_with_summary', $fileData['type']);
+    $this->assertSame([], $fileData['settings']);
 
     // Generate patch and export config after configuration change.
     $data = $configHandler->generatePatchFile(['node'], FALSE);
@@ -189,13 +189,13 @@ field.storage.node.body:
       type: text
 
 EOF;
-    $this->assertEqual($expected, $data);
+    $this->assertSame($expected, $data);
 
     // Check newly exported configuration.
     $fileData = Yaml::decode(file_get_contents($configFilePath));
 
-    $this->assertEqual('text', $fileData['type']);
-    $this->assertEqual(['max_length' => 321], $fileData['settings']);
+    $this->assertSame('text', $fileData['type']);
+    $this->assertSame(['max_length' => 321], $fileData['settings']);
   }
 
   /**
