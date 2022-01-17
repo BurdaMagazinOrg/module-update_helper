@@ -2,8 +2,8 @@
 
 namespace Drupal\update_helper\Events;
 
-use DrupalCodeGenerator\Asset;
 use Symfony\Component\EventDispatcher\Event;
+use DrupalCodeGenerator\Asset\Asset;
 
 /**
  * Event for command execute.
@@ -56,7 +56,7 @@ class CommandExecuteEvent extends Event {
   /**
    * Get the assets that should be generated.
    *
-   * @return array
+   * @return \DrupalCodeGenerator\Asset\Asset[]
    *   Assets that should be generated.
    */
   public function getAssets() {
@@ -66,7 +66,7 @@ class CommandExecuteEvent extends Event {
   /**
    * Add an asset.
    *
-   * @param \DrupalCodeGenerator\Asset $asset
+   * @param \DrupalCodeGenerator\Asset\Asset $asset
    *   The asset to add to the array.
    *
    * @return $this

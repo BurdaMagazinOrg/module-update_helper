@@ -9,33 +9,29 @@ use Drupal\update_helper\ConfigHandler;
 use Drupal\update_helper\Events\CommandExecuteEvent;
 use Drupal\update_helper\Events\CommandInteractEvent;
 use Drupal\update_helper\Events\UpdateHelperEvents;
-use DrupalCodeGenerator\Command\BaseGenerator;
-use DrupalCodeGenerator\Utils;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use DrupalCodeGenerator\Command\DrupalGenerator;
 
 /**
  * Implements d8:configuration:update command.
  */
-class ConfigurationUpdate extends BaseGenerator {
+class ConfigurationUpdate extends DrupalGenerator {
 
   /**
    * {@inheritdoc}
    */
-  protected $name = 'd8:configuration:update';
+  protected string $name = 'configuration:update';
 
   /**
    * {@inheritdoc}
    */
-  protected $description = 'Generate a configuration update';
+  protected string $description = 'Generate a configuration update';
 
   /**
    * {@inheritdoc}
    */
-  protected $alias = 'config-update';
+  protected string $alias = 'config-update';
 
   /**
    * The module extension list service.
@@ -80,80 +76,74 @@ class ConfigurationUpdate extends BaseGenerator {
   /**
    * {@inheritdoc}
    */
-  protected function interact(InputInterface $input, OutputInterface $output) {
-
+  protected function generate(array &$vars): void {
     $extensions = $this->getExtensions();
-
-    $questions['module'] = new Question('Enter a module/profile');
-    $questions['module']->setAutocompleterValues(array_keys($extensions));
-    $questions['module']->setValidator(function ($module_name) use ($extensions) {
-      if (empty($module_name) || !in_array($module_name, array_keys($extensions))) {
+    $question = new Question('Enter a module/profile');
+    $question->setAutocompleterValues(array_keys($extensions));
+    $question->setValidator(function ($module_name) use ($extensions) {
+      if (empty($module_name) || !array_key_exists($module_name, $extensions)) {
         throw new \InvalidArgumentException(
-          dt(
-            'The module name "!module_name" is not valid',
-            ['!module_name' => $module_name]
+          sprintf(
+            'The module name "%s" is not valid',
+            $module_name
           )
         );
       }
       return $module_name;
     });
 
-    $vars = $this->collectVars($input, $output, $questions);
+    $vars['module'] = $this->io->askQuestion($question);
 
-    $lastUpdate = drupal_get_installed_schema_version($vars['module']);
+    /** @var \Drupal\Core\Update\UpdateHookRegistry $service */
+    $service = \Drupal::service('update.update_hook_registry');
+    $lastUpdate = $service->getInstalledVersion($vars['module']);
     $nextUpdate = $lastUpdate > 0 ? ($lastUpdate + 1) : 8001;
 
-    $questions['update-n'] = new Question('Please provide the number for update hook to be added', $nextUpdate);
-    $questions['update-n']->setValidator(function ($update_number) use ($lastUpdate) {
+    $vars['update-n'] = $this->ask('Please provide the number for update hook to be added', $nextUpdate, function ($update_number) use ($lastUpdate) {
       if ($update_number === NULL || $update_number === '' || !is_numeric($update_number) || $update_number <= $lastUpdate) {
         throw new \InvalidArgumentException(
-          dt(
-            'The update number "!number" is not valid',
-            ['!number' => $update_number]
+          sprintf(
+            'The update number "%s" is not valid',
+            $update_number
           )
         );
       }
       return $update_number;
     });
 
-    $questions['description'] = new Question('Please enter a description text for update. This will be used as the comment for update hook.', 'Configuration update.');
-    $questions['description']->setValidator([Utils::class, 'validateRequired']);
+    $vars['description'] = $this->ask('Please enter a description text for update. This will be used as the comment for update hook.', 'Configuration update.', '::validateRequired');
 
     $enabled_modules = array_filter($this->moduleHandler->getModuleList(), function (Extension $extension) {
-      return ($extension->getType() == 'module');
+      return ($extension->getType() === 'module');
     });
     $enabled_modules = array_keys($enabled_modules);
 
-    $questions['include-modules'] = new Question('Provide a comma-separated list of modules which configurations should be included in update.', implode(',', $enabled_modules));
-    $questions['include-modules']->setNormalizer(function ($input) {
+    $question = new Question('Provide a comma-separated list of modules which configurations should be included in update.', implode(',', $enabled_modules));
+    $question->setNormalizer(function ($input) {
       return explode(',', $input);
     });
-    $questions['include-modules']->setValidator(function ($modules) use ($enabled_modules) {
+    $question->setValidator(function ($modules) use ($enabled_modules) {
       $not_enabled_modules = array_diff($modules, $enabled_modules);
       if ($not_enabled_modules) {
         throw new \InvalidArgumentException(
-          dt(
-            'These modules are not enabled: !modules',
-            ['!modules' => implode(', ', $not_enabled_modules)]
+          sprintf(
+            'These modules are not enabled: %s',
+            implode(', ', $not_enabled_modules)
           )
         );
       }
       return $modules;
     });
+    $vars['include-modules'] = $this->io->askQuestion($question);
 
-    $questions['from-active'] = new ConfirmationQuestion('Generate update from active configuration in database to configuration in Yml files?');
-    $questions['from-active']->setValidator([Utils::class, 'validateRequired']);
-
-    $vars = $this->collectVars($input, $output, $questions);
+    $vars['from-active'] = $this->confirm('Generate update from active configuration in database to configuration in Yml files?');
 
     // Get additional options provided by other modules.
     $event = new CommandInteractEvent($vars);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_INTERACT, $event);
 
-    $vars = $this->collectVars($input, $output, $event->getQuestions());
-
     // Get patch data and save it into file.
-    $patch_data = $this->configHandler->generatePatchFile($this->vars['include-modules'], $this->vars['from-active']);
+    $patch_data = $this->configHandler->generatePatchFile($vars['include-modules'], $vars['from-active']);
 
     if (!empty($patch_data)) {
 
@@ -167,14 +157,14 @@ class ConfigurationUpdate extends BaseGenerator {
 
       $this->assets = $event->getAssets();
 
-      $patch_file_path = $this->configHandler->getPatchFile($this->vars['module'], static::getUpdateFunctionName($this->vars['module'], $this->vars['update-n']), TRUE);
+      $patch_file_path = $this->configHandler->getPatchFile($vars['module'], static::getUpdateFunctionName($vars['module'], $vars['update-n']), TRUE);
 
       // Add the patchfile.
       $this->addFile($patch_file_path)
         ->content($patch_data);
     }
     else {
-      $output->write('There are no configuration changes that should be exported for the update.', TRUE);
+      $this->io->write('There are no configuration changes that should be exported for the update.', TRUE);
     }
   }
 
