@@ -13,6 +13,7 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use DrupalCodeGenerator\Command\DrupalGenerator;
 use DrupalCodeGenerator\Asset\AssetCollection;
+use Symfony\Component\Console\Question\ChoiceQuestion;
 
 /**
  * Implements update_helper:configuration-update command.
@@ -119,22 +120,8 @@ class ConfigurationUpdate extends DrupalGenerator {
     });
     $enabled_modules = array_keys($enabled_modules);
 
-    $question = new Question('Provide a comma-separated list of modules which configurations should be included in update.', implode(',', $enabled_modules));
-    $question->setNormalizer(function ($input) {
-      return explode(',', $input);
-    });
-    $question->setValidator(function ($modules) use ($enabled_modules) {
-      $not_enabled_modules = array_diff($modules, $enabled_modules);
-      if ($not_enabled_modules) {
-        throw new \InvalidArgumentException(
-          sprintf(
-            'These modules are not enabled: %s',
-            implode(', ', $not_enabled_modules)
-          )
-        );
-      }
-      return $modules;
-    });
+    $question = new ChoiceQuestion('Provide a comma-separated list of modules which configurations should be included in update.', $enabled_modules);
+    $question->setMultiselect(TRUE);
     $vars['include-modules'] = $this->io->askQuestion($question);
 
     $vars['from-active'] = $this->confirm('Generate update from active configuration in database to configuration in Yml files?');

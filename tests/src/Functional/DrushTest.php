@@ -77,22 +77,13 @@ class DrushTest extends BrowserTestBase {
     $configData['lost_config'] = 'text';
 
     $config->setData($configData)->save(TRUE);
-    $optionsExample['answers'] = json_encode([
-      'module' => 'test_node_config',
-      'update-n' => 9001,
-      'description' => 'Some description',
-      'include-modules' => ['test_node_config'],
-      'from-active' => TRUE,
-    ]);
-    $optionsExample['yes'] = NULL;
 
     $install_file = $this->siteDirectory . '/modules/test_node_config/test_node_config.install';
     $update_file = $this->siteDirectory . '/modules/test_node_config/config/update/test_node_config_update_9001.yml';
-    $this->assertFileNotExists($install_file);
-    $this->assertFileNotExists($update_file);
+    $this->assertFileDoesNotExist($install_file);
+    $this->assertFileDoesNotExist($update_file);
 
-    $this->drush('generate', ['configuration-update'], $optionsExample, NULL, NULL, 0, NULL, ['SHELL_INTERACTIVE' => 1]);
-
+    $this->drush('generate', ['config-update'], [], NULL, NULL, 0, "--answer test_node_config --answer 9001 --answer 'Some description' --answer test_node_config --answer Yes --yes", ['SHELL_INTERACTIVE' => 1]);
     $this->assertFileExists($install_file);
     $this->assertFileExists($update_file);
     $this->assertEquals(ConfigHandlerTest::getUpdateDefinition(), file_get_contents($update_file));
