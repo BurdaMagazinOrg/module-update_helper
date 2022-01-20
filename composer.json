@@ -23,12 +23,11 @@
     ],
     "require": {
         "drupal/config_update": "^1.5",
-        "symfony/console": "~3.4.0 || ^4.4",
-        "chi-teck/drupal-code-generator": "^1.32.0"
+        "symfony/console": "^4.4.15 || ^5.1"
     },
     "require-dev": {
         "drupal/checklistapi": "~1.0 || ~2.0",
-        "drush/drush": "~10.2"
+        "drush/drush": "~11.0"
     },
     "suggest": {
         "drupal/checklistapi": "Provides an API for creating fillable, persistent checklists. Required by the Update Helper Checklist module."
