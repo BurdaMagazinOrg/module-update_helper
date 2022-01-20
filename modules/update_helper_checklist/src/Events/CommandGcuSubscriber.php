@@ -8,9 +8,9 @@ use Drupal\update_helper\Events\UpdateHelperEvents;
 use Drupal\update_helper\Events\CommandInteractEvent;
 use Drupal\update_helper\Generators\ConfigurationUpdate;
 use Drupal\update_helper_checklist\UpdateChecklist;
-use DrupalCodeGenerator\Asset;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use DrupalCodeGenerator\Asset\File;
 
 /**
  * Subscriber for "generate:configuration:update" command.
@@ -124,10 +124,9 @@ class CommandGcuSubscriber implements EventSubscriberInterface {
     $vars['file_exists'] = file_exists($checklist_file);
 
     // Add the update hook template.
-    $asset = (new Asset())->type('file')
+    $asset = (new File($checklist_file))
       ->vars($vars)
-      ->path($checklist_file)
-      ->action('append')
+      ->appendIfExists()
       ->template('configuration_update_checklist.yml.twig');
 
     $execute_event->addAsset($asset);

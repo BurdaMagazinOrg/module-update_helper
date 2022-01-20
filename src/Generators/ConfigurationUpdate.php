@@ -12,21 +12,22 @@ use Drupal\update_helper\Events\UpdateHelperEvents;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use DrupalCodeGenerator\Command\DrupalGenerator;
+use DrupalCodeGenerator\Asset\AssetCollection;
 
 /**
- * Implements d8:configuration:update command.
+ * Implements update_helper:configuration-update command.
  */
 class ConfigurationUpdate extends DrupalGenerator {
 
   /**
    * {@inheritdoc}
    */
-  protected string $name = 'configuration:update';
+  protected string $name = 'update_helper:configuration-update';
 
   /**
    * {@inheritdoc}
    */
-  protected string $description = 'Generate a configuration update';
+  protected string $description = 'Generates a configuration update';
 
   /**
    * {@inheritdoc}
@@ -65,7 +66,7 @@ class ConfigurationUpdate extends DrupalGenerator {
    * {@inheritdoc}
    */
   public function __construct(ModuleExtensionList $extension_list, EventDispatcherInterface $event_dispatcher, ModuleHandlerInterface $module_handler, ConfigHandler $config_handler) {
-    parent::__construct();
+    parent::__construct($this->name);
 
     $this->extensionList = $extension_list;
     $this->eventDispatcher = $event_dispatcher;
@@ -114,7 +115,7 @@ class ConfigurationUpdate extends DrupalGenerator {
     $vars['description'] = $this->ask('Please enter a description text for update. This will be used as the comment for update hook.', 'Configuration update.', '::validateRequired');
 
     $enabled_modules = array_filter($this->moduleHandler->getModuleList(), function (Extension $extension) {
-      return ($extension->getType() === 'module');
+      return ($extension->getType() === 'module' || $extension->getType() === 'profile');
     });
     $enabled_modules = array_keys($enabled_modules);
 
@@ -142,6 +143,10 @@ class ConfigurationUpdate extends DrupalGenerator {
     $event = new CommandInteractEvent($vars);
     $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_INTERACT, $event);
 
+    foreach ($event->getQuestions() as $key => $question) {
+      $vars[$key] = $this->io->askQuestion($question);
+    }
+
     // Get patch data and save it into file.
     $patch_data = $this->configHandler->generatePatchFile($vars['include-modules'], $vars['from-active']);
 
@@ -152,10 +157,10 @@ class ConfigurationUpdate extends DrupalGenerator {
       $this->eventDispatcher->dispatch(UpdateHelperEvents::COMMAND_GCU_EXECUTE, $event);
 
       foreach ($event->getTemplatePaths() as $path) {
-        $this->getHelper('dcg_renderer')->addPath($path);
+        $this->getHelper('renderer')->prependPath($path);
       }
 
-      $this->assets = $event->getAssets();
+      $this->assets = new AssetCollection($event->getAssets());
 
       $patch_file_path = $this->configHandler->getPatchFile($vars['module'], static::getUpdateFunctionName($vars['module'], $vars['update-n']), TRUE);
 
